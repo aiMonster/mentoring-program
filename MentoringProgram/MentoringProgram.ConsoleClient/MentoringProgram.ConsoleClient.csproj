@@ -94,6 +94,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MarketManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -105,6 +106,10 @@
     <ProjectReference Include="..\MentoringProgram.Common\MentoringProgram.Common.csproj">
       <Project>{7B9658CC-53D4-4922-8604-C97C289BB4CD}</Project>
       <Name>MentoringProgram.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MentoringProgram.ExchangeProviders.Bitfinex\MentoringProgram.ExchangeProviders.Bitfinex.csproj">
+      <Project>{A1926A38-0BCC-4006-84D4-8A24D3487F69}</Project>
+      <Name>MentoringProgram.ExchangeProviders.Bitfinex</Name>
     </ProjectReference>
     <ProjectReference Include="..\MentoringProgram.MarketClients\MentoringProgram.MarketClients.csproj">
       <Project>{5b25062a-5c89-4a73-8c22-fa91614a6161}</Project>

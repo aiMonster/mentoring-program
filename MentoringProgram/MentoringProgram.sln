@@ -5,9 +5,17 @@ VisualStudioVersion = 15.0.28306.52
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MentoringProgram.ConsoleClient", "MentoringProgram.ConsoleClient\MentoringProgram.ConsoleClient.csproj", "{367DCB58-F917-4827-B6C4-9E426E88FA69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MentoringProgram.Common", "MentoringProgram.Common\MentoringProgram.Common.csproj", "{7B9658CC-53D4-4922-8604-C97C289BB4CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MentoringProgram.Common", "MentoringProgram.Common\MentoringProgram.Common.csproj", "{7B9658CC-53D4-4922-8604-C97C289BB4CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MentoringProgram.MarketClients", "MentoringProgram.MarketClients\MentoringProgram.MarketClients.csproj", "{5B25062A-5C89-4A73-8C22-FA91614A6161}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MentoringProgram.MarketClients", "MentoringProgram.MarketClients\MentoringProgram.MarketClients.csproj", "{5B25062A-5C89-4A73-8C22-FA91614A6161}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ExchangeProviders", "ExchangeProviders", "{C4107CE7-90E3-4345-9EC9-86113E5CF074}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MentoringProgram.ExchangeProviders.Binance", "MentoringProgram.ExchangeProviders.Binance\MentoringProgram.ExchangeProviders.Binance.csproj", "{F3B49E84-1929-4767-9B8F-2963C6CCE486}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MentoringProgram.ExchangeProviders.Bitfinex", "MentoringProgram.ExchangeProviders.Bitfinex\MentoringProgram.ExchangeProviders.Bitfinex.csproj", "{A1926A38-0BCC-4006-84D4-8A24D3487F69}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MentoringProgram.Tests", "MentoringProgram.Tests\MentoringProgram.Tests.csproj", "{3A9A8B87-9C79-4862-8217-754AE5FA072B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,9 +35,25 @@ Global
 		{5B25062A-5C89-4A73-8C22-FA91614A6161}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B25062A-5C89-4A73-8C22-FA91614A6161}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B25062A-5C89-4A73-8C22-FA91614A6161}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3B49E84-1929-4767-9B8F-2963C6CCE486}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3B49E84-1929-4767-9B8F-2963C6CCE486}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3B49E84-1929-4767-9B8F-2963C6CCE486}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3B49E84-1929-4767-9B8F-2963C6CCE486}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1926A38-0BCC-4006-84D4-8A24D3487F69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1926A38-0BCC-4006-84D4-8A24D3487F69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1926A38-0BCC-4006-84D4-8A24D3487F69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1926A38-0BCC-4006-84D4-8A24D3487F69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A9A8B87-9C79-4862-8217-754AE5FA072B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A9A8B87-9C79-4862-8217-754AE5FA072B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A9A8B87-9C79-4862-8217-754AE5FA072B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A9A8B87-9C79-4862-8217-754AE5FA072B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F3B49E84-1929-4767-9B8F-2963C6CCE486} = {C4107CE7-90E3-4345-9EC9-86113E5CF074}
+		{A1926A38-0BCC-4006-84D4-8A24D3487F69} = {C4107CE7-90E3-4345-9EC9-86113E5CF074}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {50BF321A-F848-426E-9788-F3E3A390843A}

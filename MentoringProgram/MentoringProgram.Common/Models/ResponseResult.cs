@@ -2,10 +2,10 @@
 {
     public class ResponseResult<T>
     {
-        public T Data { get; set; }
+        public T Data { get; }
 
-        public string Erorr { get; set; }
-        public bool IsSuccess { get; set; }
+        public string Erorr { get;}
+        public bool IsSuccess { get; }
 
         public ResponseResult(T data)
         {
