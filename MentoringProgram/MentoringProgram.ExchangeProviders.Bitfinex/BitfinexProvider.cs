@@ -1,7 +1,8 @@
 ﻿using Bitfinex.Net;
-using CryptoExchange.Net.Sockets;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.ExchangeProviders.Bitfinex.Extensions;
+using MentoringProgram.ExchangeProviders.Bitfinex.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +12,10 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
     public class BitfinexProvider : IExchangeProvider
     {
         private readonly BitfinexSocketClient _bitfinexSocketClient;
-        private readonly BitfinexClient _bitfinexClient;
+        private readonly BitfinexClient _bitfinexClient;       
+        private Dictionary<TradingPair, SubscriptionSubscribers> Subscriptions = new Dictionary<TradingPair, SubscriptionSubscribers>();
 
-        private Dictionary<Subscription, UpdateSubscription> Subscriptions { get; } = new Dictionary<Subscription, UpdateSubscription>();
+        public event Action OnDisconnected;
 
         public BitfinexProvider()
         {
@@ -21,47 +23,76 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
             _bitfinexClient = new BitfinexClient();
         }
 
-        public ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
+        public Candle GetCurrentCandlePrice(TradingPair pair)
         {
-            var response = _bitfinexSocketClient.SubscribeToTradeUpdates("t" + pair.ToUpper().Name, (data) =>
-            {
-                var input = data.Select(d => new TradeUpdate(pair, new Price(d.Price))).First();
-                callback?.Invoke(input);
-            });
-
-            if (!response.Success)
-            {
-                return new ResponseResult<Subscription>(response.Error.Message);
-            }
-            else
-            {
-                var subscription = new Subscription(Guid.NewGuid());
-                Subscriptions.Add(subscription, response.Data);
-
-                return new ResponseResult<Subscription>(subscription);
-            }
+            var result = _bitfinexClient.GetTicker("t" + pair.Name.ToLower()).Data.FirstOrDefault();
+            return new Candle((Price)result.Bid, (Price)result.Ask);
         }
 
-        public void Unsubscribe(Subscription subscription)
+        public ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
         {
-            var result = Subscriptions[subscription];
-            if(result != null)
+            if (!Subscriptions.ContainsKey(pair))
             {
-                result.Close();
-                Subscriptions.Remove(subscription);
+                var response = _bitfinexSocketClient.SubscribeToTickerUpdates("t" + pair.Name.ToUpper(), (data) =>
+                {
+                    var candle = data.ToCandle();
+                    var update = new TradeUpdate(pair, candle);
+                    NotifyPairSubscribers(pair, update);
+                });
+
+                if (!response.Success)
+                {
+                    return new ResponseResult<Subscription>(response.Error.Message);
+                }
+
+                Subscriptions.Add(pair, new SubscriptionSubscribers(response.Data));                
+            }
+
+            var subscriber = new Subscriber(Guid.NewGuid(), callback);           
+
+            Subscriptions[pair].Subscribers.Add(subscriber);
+
+            var subscription = new Subscription(subscriber.SubscriptionId, () => Unsubscribe(subscriber.SubscriptionId));
+
+            return new ResponseResult<Subscription>(subscription);
+        }
+        
+        public void Unsubscribe(Guid subscriptionId)
+        {
+            var pairSubscriptions = Subscriptions.Where(s => s.Value.Subscribers.Any(ss => ss.SubscriptionId == subscriptionId)).FirstOrDefault();
+            if(pairSubscriptions.Value == null)
+            {
+                return;
+            }
+
+            var toDelete = pairSubscriptions.Value.Subscribers.Where(s => s.SubscriptionId == subscriptionId).FirstOrDefault();
+            pairSubscriptions.Value.Subscribers.Remove(toDelete);
+
+            if (!pairSubscriptions.Value.Subscribers.Any())
+            {
+                pairSubscriptions.Value.ApiSubscription.Close();
+                Subscriptions.Remove(pairSubscriptions.Key);
             }
         }
 
         public void Dispose()
         {
+            OnDisconnected();
             _bitfinexSocketClient.Dispose();
             _bitfinexClient.Dispose();
         }
 
-        public Price GetCurrentPrice(TradingPair pair)
+        private void NotifyPairSubscribers(TradingPair pair, TradeUpdate update)
         {
-            var value = _bitfinexClient.GetTrades(pair.ToUpper().Name, 1).Data.First().Price;
-            return new Price(value);
+            var subscription = Subscriptions[pair];
+            if (subscription != null)
+            {
+                foreach (var s in subscription.Subscribers)
+                {
+                    s.Callback?.Invoke(update);
+                }
+            }
         }
+
     }
 }

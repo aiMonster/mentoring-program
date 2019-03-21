@@ -1,14 +1,14 @@
 ﻿namespace MentoringProgram.Common.Models
 {
-    public class TradeUpdate
+    public struct TradeUpdate
     {       
         public TradingPair Pair { get; }        
-        public Price Price { get;}
+        public Candle CandlePrice { get;}
 
-        public TradeUpdate(TradingPair pair, Price price)
+        public TradeUpdate(TradingPair pair, Candle candlePrice)
         {
             Pair = pair;
-            Price = price;
+            CandlePrice = candlePrice;
         }
     }
 }

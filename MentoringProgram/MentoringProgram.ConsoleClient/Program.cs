@@ -1,6 +1,9 @@
-﻿using MentoringProgram.Common.Enums;
+﻿using Bittrex.Net;
+using Jojatekok.PoloniexAPI;
+using MentoringProgram.Common.Enums;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.ExchangeProviders.Bittrex;
 using MentoringProgram.MarketClients;
 using System;
 using System.Linq;
@@ -12,7 +15,36 @@ namespace MentoringProgram.ConsoleClient
         static void Main(string[] args)
         {
             Console.WriteLine("Started ...");
-            
+
+            //var provider = new BittrexProvider();
+            //provider.Subscribe(new TradingPair("btc", "eth"), () =>
+            //{
+            //    Console.WriteLine("we've got smth");
+            //});
+            //var id = provider.Subscribe(new TradingPair("btc", "eth"), () =>
+            //{
+            //    Console.WriteLine("we've got smth but another handler");
+            //});
+
+            //id.Data.Dispose();
+            //provider.Unsubscribe(id.Data.Id);
+
+            //var client = new BittrexClient();
+            //var pp = client.GetMarkets();
+            //var priceResult = client.GetTicker("BTC-ETH");
+            //Console.WriteLine("Ask - " + priceResult.Data.Ask);
+
+            //var socket = new BittrexSocketClient();
+            //socket.SubscribeToMarketSummariesUpdate(data =>
+            //{
+            //    //var ask = data.Where(s => s.MarketName == "BTC-ETH")?.FirstOrDefault().Ask.ToString() ?? "not found"
+            //    Console.WriteLine(data.Where(s => s.MarketName == "BTC-ETH").FirstOrDefault()?.Ask.ToString() ?? "not found");
+            //});
+
+
+            Console.WriteLine("Stoooop ...");
+            Console.ReadLine();
+
             var marketManager = new MarketManager();
 
             SubscribeAndDisplay(marketManager);
@@ -28,14 +60,14 @@ namespace MentoringProgram.ConsoleClient
             var previous = default(decimal);
             Action<TradeUpdate> callback = delegate (TradeUpdate update)
             {                
-                var current = update.Price.Value;
+                var current = update.CandlePrice.Ask;
 
                 ConsoleColor color;
-                if (previous > current)
+                if (previous > current.Value)
                 {
                     color = ConsoleColor.Red;
                 }
-                else if (previous < current)
+                else if (previous < current.Value)
                 {
                     color = ConsoleColor.Green;
                 }
@@ -46,7 +78,7 @@ namespace MentoringProgram.ConsoleClient
 
                 Console.ForegroundColor = color;
 
-                previous = current;
+                previous = current.Value;
                 Console.WriteLine($"Price: {current}");
             };
 
@@ -61,7 +93,7 @@ namespace MentoringProgram.ConsoleClient
             var rule = new TradingRule.Builder()
                                      .AddMarkets(GetMarketsFromUser())
                                      .SetPair(GetPairFromUser())
-                                     .SetBoundary(GetBoundaryFromUser(), GetBoundaryDirectionFromUser())
+                                     .SetBoundary(GetBoundaryFromUser(), GetBoundaryDirectionFromUser(), PriceType.Ask)
                                      .Build();
 
             Action alertCallback = delegate
@@ -133,7 +165,7 @@ namespace MentoringProgram.ConsoleClient
             decimal parsedBoundary;
             if (boundary != "no" && decimal.TryParse(boundary, out parsedBoundary))
             {
-                ruleBuilder.SetBoundary((Price)parsedBoundary, PriceDirection.Down);
+                ruleBuilder.SetBoundary((Price)parsedBoundary, PriceDirection.Down, PriceType.Ask);
             }
 
             return ruleBuilder.Build();

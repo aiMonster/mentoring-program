@@ -1,7 +1,9 @@
-﻿using MentoringProgram.Common.Enums;
+﻿using MentoringProgram.Common.DataStructures;
+using MentoringProgram.Common.Enums;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
 using MentoringProgram.ExchangeProviders.Bitfinex;
+using MentoringProgram.ExchangeProviders.Bittrex;
 using System;
 using System.Collections.Generic;
 
@@ -10,12 +12,14 @@ namespace MentoringProgram.ConsoleClient
     public class MarketManager
     {
         BitfinexProvider _bitfinexProvider { get; }
+        BittrexProvider _bittrexProvider { get; }
 
         private Dictionary<Subscription, PairSubscription> Subscriptions = new Dictionary<Subscription, PairSubscription>();
 
         public MarketManager()
         {           
             _bitfinexProvider = new BitfinexProvider();
+            _bittrexProvider = new BittrexProvider();
         }
 
         #region Subscriptions
@@ -80,7 +84,7 @@ namespace MentoringProgram.ConsoleClient
                 pairSubscription.MarketSubscriptions.Add(new MarketSubscription(marketSubscription.Data.Id, market));
             }
 
-            var subscription = new Subscription(Guid.NewGuid());
+            var subscription = new Subscription(Guid.NewGuid(), null);
 
             Subscriptions.Add(subscription, pairSubscription);
             return subscription;
@@ -98,7 +102,7 @@ namespace MentoringProgram.ConsoleClient
                 {
                     if (rule.PriceDirection == PriceDirection.Down)
                     {
-                        if (tradeUpdate.Price < rule.Boundary || currentLowestRate < rule.Boundary)
+                        if (tradeUpdate.CandlePrice.Ask < rule.Boundary || currentLowestRate < rule.Boundary)
                         {
                             callback?.Invoke();
                             wasInvoked = true;
@@ -106,7 +110,7 @@ namespace MentoringProgram.ConsoleClient
                     }
                     else if (rule.PriceDirection == PriceDirection.Up)
                     {
-                        if (tradeUpdate.Price > rule.Boundary || currentHighestRate > rule.Boundary)
+                        if (tradeUpdate.CandlePrice.Ask > rule.Boundary || currentHighestRate > rule.Boundary)
                         {
                             callback?.Invoke();
                             wasInvoked = true;
@@ -128,7 +132,7 @@ namespace MentoringProgram.ConsoleClient
                 foreach(var marketSubscription in subscriptionResult.MarketSubscriptions)
                 {
                     var provider = GetExchangeProvider(marketSubscription.Market);
-                    provider.Unsubscribe(marketSubscription);
+                    provider.Unsubscribe(marketSubscription.Id);
                 }
                 Subscriptions.Remove(subscription);
             }
@@ -142,14 +146,14 @@ namespace MentoringProgram.ConsoleClient
             {
                 case TradingMarket.Bitfinex:
                     return _bitfinexProvider;
-                case TradingMarket.Binance:
-                    return null;
+                case TradingMarket.Bittrex:
+                    return _bittrexProvider;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(marketType));
             }
         }               
        
-        private Price GetLowestRate(List<TradingMarket> tradingMarkets, TradingPair pair)
+        private Price GetLowestRate(MarketsList tradingMarkets, TradingPair pair)
         {
             var lowest = new Price(decimal.MaxValue);
 
@@ -157,14 +161,14 @@ namespace MentoringProgram.ConsoleClient
             {
                 var exchangeProvider = GetExchangeProvider(market);
 
-                var current = exchangeProvider.GetCurrentPrice(pair);
+                var current = exchangeProvider.GetCurrentCandlePrice(pair).Ask;
                 lowest = current < lowest ? current : lowest;
             }
 
             return lowest;
         }
 
-        private Price GetHighestRate(List<TradingMarket> tradingMarkets, TradingPair pair)
+        private Price GetHighestRate(MarketsList tradingMarkets, TradingPair pair)
         {
             var highest = new Price(decimal.Zero);
 
@@ -172,7 +176,7 @@ namespace MentoringProgram.ConsoleClient
             {
                 var exchangeProvider = GetExchangeProvider(market);
 
-                var current = exchangeProvider.GetCurrentPrice(pair);
+                var current = exchangeProvider.GetCurrentCandlePrice(pair).Ask;
                 highest = current > highest ? current : highest;
             }
 

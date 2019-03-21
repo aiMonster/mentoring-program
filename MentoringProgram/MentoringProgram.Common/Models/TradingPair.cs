@@ -31,16 +31,28 @@ namespace MentoringProgram.Common.Models
         public TradingPair UseQuote(string quote) =>
             new TradingPair(Base, quote);
 
-        public TradingPair ToUpper() =>
-            new TradingPair(Base.ToUpper(), Quote.ToUpper());
+        public override bool Equals(object obj)
+        {
+            var isValidCast = obj is TradingPair;
+            if (!isValidCast)
+            {
+                throw new InvalidCastException();
+            }
 
-        public TradingPair ToLower() =>
-            new TradingPair(Base.ToLower(), Quote.ToLower());
+            var pair = (TradingPair)obj;
+
+            return Name.Equals(pair.Name, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.ToLower().GetHashCode();
+        }
 
         public override string ToString()
         {
             return $"{Base.ToUpper()}/{Quote.ToUpper()}";
-        }  
+        }
 
         public static TradingPair BTCUSD
         {

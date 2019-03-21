@@ -3,10 +3,11 @@ using System;
 
 namespace MentoringProgram.Common.Interfaces
 {
-    public interface IExchangeProvider
+    public interface IExchangeProvider : IDisposable
     {
-        Price GetCurrentPrice(TradingPair pair);
+        event Action OnDisconnected;      
         ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback);
-        void Unsubscribe(Subscription subscription);
+        void Unsubscribe(Guid subscriptionId);
+        Candle GetCurrentCandlePrice(TradingPair pair);
     }
 }

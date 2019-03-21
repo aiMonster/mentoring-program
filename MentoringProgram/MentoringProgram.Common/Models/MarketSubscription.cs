@@ -7,7 +7,7 @@ namespace MentoringProgram.Common.Models
     {
         public TradingMarket Market { get; }
 
-        public MarketSubscription(Guid id, TradingMarket market) : base(id)
+        public MarketSubscription(Guid id, TradingMarket market) : base(id, null)
         {
             Market = market;
         }
