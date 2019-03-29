@@ -1,6 +1,7 @@
 ﻿using Bitfinex.Net;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.Subscriptions;
 using MentoringProgram.ExchangeProviders.Bitfinex.Extensions;
 using MentoringProgram.ExchangeProviders.Bitfinex.Models;
 using System;
@@ -23,9 +24,14 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
             _bitfinexClient = new BitfinexClient();
         }
 
+        public void Connect()
+        {
+          
+        }
+
         public Candle GetCurrentCandlePrice(TradingPair pair)
         {
-            var result = _bitfinexClient.GetTicker("t" + pair.Name.ToLower()).Data.FirstOrDefault();
+            var result = _bitfinexClient.GetTicker(pair.ToBitfinexPair()).Data.FirstOrDefault();
             return new Candle((Price)result.Bid, (Price)result.Ask);
         }
 
@@ -33,7 +39,7 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
         {
             if (!Subscriptions.ContainsKey(pair))
             {
-                var response = _bitfinexSocketClient.SubscribeToTickerUpdates("t" + pair.Name.ToUpper(), (data) =>
+                var response = _bitfinexSocketClient.SubscribeToTickerUpdates(pair.ToBitfinexPair(), (data) =>
                 {
                     var candle = data.ToCandle();
                     var update = new TradeUpdate(pair, candle);
@@ -80,6 +86,11 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
             OnDisconnected();
             _bitfinexSocketClient.Dispose();
             _bitfinexClient.Dispose();
+        }
+
+        public sealed override string ToString()
+        {
+            return "BitfinexProvider";
         }
 
         private void NotifyPairSubscribers(TradingPair pair, TradeUpdate update)

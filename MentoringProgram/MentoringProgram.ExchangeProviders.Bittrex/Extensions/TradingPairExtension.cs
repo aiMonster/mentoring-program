@@ -19,5 +19,10 @@ namespace MentoringProgram.ExchangeProviders.Bittrex.Extensions
             }
             
         }
+
+        public static string ToBittrexPair(this TradingPair pair)
+        {
+            return pair.Base.ToUpper() + "-" + pair.Quote.ToUpper();
+        }
     }
 }

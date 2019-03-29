@@ -2,6 +2,7 @@
 using Bittrex.Net.Objects;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.Subscriptions;
 using MentoringProgram.ExchangeProviders.Bittrex.Extensions;
 using MentoringProgram.ExchangeProviders.Bittrex.Models;
 using System;
@@ -23,13 +24,16 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
         {
             _bittrexSocketClient = new BittrexSocketClient();            
             _bittrexClient = new BittrexClient();
+        }
 
+        public void Connect()
+        {
             StartReceiveUpdates();
         }
 
         public Candle GetCurrentCandlePrice(TradingPair pair)
         {
-            var candle = _bittrexClient.GetTicker(pair.Base.ToUpper() + "-" + pair.Quote.ToUpper()).Data;
+            var candle = _bittrexClient.GetTicker(pair.ToBittrexPair()).Data;
             return new Candle((Price)candle.Bid, (Price)candle.Ask);    
         }
 
@@ -72,6 +76,11 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
             OnDisconnected();
             _bittrexClient.Dispose();
             _bittrexSocketClient.Dispose();
+        }
+
+        public override string ToString()
+        {
+            return "BittrexProvider";
         }
 
         #region Private members

@@ -1,144 +1,90 @@
-﻿using MentoringProgram.Common.DataStructures;
-using MentoringProgram.Common.Enums;
+﻿using MentoringProgram.Common.Enums;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.Subscriptions;
+using MentoringProgram.Common.Rules;
+using MentoringProgram.Common.Wrappers;
 using MentoringProgram.ExchangeProviders.Bitfinex;
 using MentoringProgram.ExchangeProviders.Bittrex;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MentoringProgram.ConsoleClient
 {
+    
     public class MarketManager
     {
-        BitfinexProvider _bitfinexProvider { get; }
-        BittrexProvider _bittrexProvider { get; }
+        IExchangeProvider _bitfinexProvider { get; }
+        IExchangeProvider _bittrexProvider { get; }
 
-        private Dictionary<Subscription, PairSubscription> Subscriptions = new Dictionary<Subscription, PairSubscription>();
+        private Dictionary<BaseRule, RuleSubscription> Subscriptions = new Dictionary<BaseRule, RuleSubscription>();
 
         public MarketManager()
-        {           
-            _bitfinexProvider = new BitfinexProvider();
-            _bittrexProvider = new BittrexProvider();
+        {
+            //Note that if we change alwaysOn with Log, result will be completele different as we use ToString
+            //Looks like we should override this method in AlwaysOn as well
+            //new BitfinexProvider().AlwaysOn().Log();
+            _bitfinexProvider = new BitfinexProvider().AttachLoger().AlwaysOn();
+            _bittrexProvider = new BittrexProvider().AttachLoger().AlwaysOn();
         }
 
-        #region Subscriptions
-
-        #region IMPLEMENT
-
-        //public void AddMarketsToSubscription(Subscription subscription, params TradingMarket[] markets)
-        //{
-        //    var subscriptionToUpdate = Subscriptions[subscription];
-        //    if(subscriptionToUpdate == null)
-        //    {
-        //        return;
-        //    }
-
-        //    markets = markets.Except(subscriptionToUpdate.MarketSubscriptions.Select(s => s.Market)).ToArray();
-
-        //    foreach(var market in markets)
-        //    {
-        //        var provider = GetExchangeProvider(market);
-        //        var subscrip = provider.Subscribe(subscriptionToUpdate.Pair, subscriptionToUpdate.Callback);
-
-        //        subscriptionToUpdate.MarketSubscriptions.Add(new MarketSubscription(subscrip.Data.Id, market));
-        //    }          
-        //}
-       
-        //public void RemoveMarketsFromSubscription(Subscription subscription, params TradingMarket[] markets)
-        //{
-        //    var subscriptionToUpdate = Subscriptions[subscription];
-        //    if(subscriptionToUpdate == null)
-        //    {
-        //        return;
-        //    }
-
-        //    var marketSubscriptions = subscriptionToUpdate.MarketSubscriptions.Where(s => markets.Contains(s.Market)).ToList();
-
-        //    foreach (var market in marketSubscriptions)
-        //    {
-        //        var provider = GetExchangeProvider(market.Market);
-        //        provider.Unsubscribe(market);
-
-        //        subscriptionToUpdate.MarketSubscriptions.Remove(market);
-        //    }
-
-        //    if(subscriptionToUpdate.MarketSubscriptions.Count == 0)
-        //    {
-        //        Subscriptions.Remove(subscription);
-        //    }
-        //}
-
-        #endregion
-
-        public Subscription Subscribe(TradingPair pair, Action<TradeUpdate> callback, params TradingMarket[] markets)
+        public void ConnectToExchangeProviders()
         {
-            var pairSubscription = new PairSubscription(pair, callback);
+            _bitfinexProvider.Connect();
+            _bittrexProvider.Connect();
+        }
 
-            foreach(var market in markets)
+        public Subscription SubscribeRule(BaseRule rule, Action callback)
+        {
+            if (Subscriptions.ContainsKey(rule))
             {
-                var provider = GetExchangeProvider(market);
-                var marketSubscription = provider.Subscribe(pair, callback);
-
-                //TODO: Check is subscription successfull
-                pairSubscription.MarketSubscriptions.Add(new MarketSubscription(marketSubscription.Data.Id, market));
+                return Subscriptions[rule].Subscription;
             }
 
-            var subscription = new Subscription(Guid.NewGuid(), null);
-
-            Subscriptions.Add(subscription, pairSubscription);
-            return subscription;
-        }
-        public Subscription Subscribe(TradingRule rule, Action callback, bool invokeOnce = true)
-        {
-            var currentLowestRate = GetLowestRate(rule.TradingMarkets, rule.Pair);
-            var currentHighestRate = GetHighestRate(rule.TradingMarkets, rule.Pair);
-
-            var wasInvoked = false;
-
-            Action<TradeUpdate> alertCallback = delegate (TradeUpdate tradeUpdate)
+            Action<TradeUpdate> marketCallback = (update) =>
             {
-                if (!wasInvoked || !invokeOnce)
+                Console.WriteLine(update.CandlePrice.Ask);
+                if (rule.IsConditionMet(update))
                 {
-                    if (rule.PriceDirection == PriceDirection.Down)
-                    {
-                        if (tradeUpdate.CandlePrice.Ask < rule.Boundary || currentLowestRate < rule.Boundary)
-                        {
-                            callback?.Invoke();
-                            wasInvoked = true;
-                        }
-                    }
-                    else if (rule.PriceDirection == PriceDirection.Up)
-                    {
-                        if (tradeUpdate.CandlePrice.Ask > rule.Boundary || currentHighestRate > rule.Boundary)
-                        {
-                            callback?.Invoke();
-                            wasInvoked = true;
-                        }
-                    }
+                    callback?.Invoke();
                 }
             };
 
-            var alertSubscription = Subscribe(rule.Pair, alertCallback, rule.TradingMarkets.ToArray());
+            var subscriptionId = Guid.NewGuid();
 
-            return alertSubscription;
-        }
+            var ruleSubscription = new RuleSubscription();
+            ruleSubscription.Subscription = new Subscription(subscriptionId, () => Unsubscribe(subscriptionId));
+            ruleSubscription.MarketSubscriptions = new List<MarketSubscription>();
 
-        public void Unsubscribe(Subscription subscription)
-        {
-            var subscriptionResult = Subscriptions[subscription];
-            if(subscriptionResult != null)
+            foreach (var market in rule.TradingMarkets)
             {
-                foreach(var marketSubscription in subscriptionResult.MarketSubscriptions)
-                {
-                    var provider = GetExchangeProvider(marketSubscription.Market);
-                    provider.Unsubscribe(marketSubscription.Id);
-                }
-                Subscriptions.Remove(subscription);
-            }
-        }
+                var provider = GetExchangeProvider(market);
+                var subscription = provider.Subscribe(rule.Pair, marketCallback);
 
-        #endregion
+                var marketSubscription = new MarketSubscription(subscription.Data, market);
+
+                ruleSubscription.MarketSubscriptions.Add(marketSubscription);
+            }
+
+            return ruleSubscription.Subscription;
+        }       
+
+        public void Unsubscribe(Guid subscriptionId)
+        {
+            var subscription = Subscriptions.FirstOrDefault(v => v.Value.Subscription.Id == subscriptionId);
+            if(subscription.Value == null)
+            {
+                return;
+            }
+
+            foreach(var marketSubscription in subscription.Value.MarketSubscriptions)
+            {
+                marketSubscription.Dispose();
+            }
+
+            Subscriptions.Remove(subscription.Key);
+        }
 
         private IExchangeProvider GetExchangeProvider(TradingMarket marketType)
         {
@@ -151,37 +97,6 @@ namespace MentoringProgram.ConsoleClient
                 default:
                     throw new ArgumentOutOfRangeException(nameof(marketType));
             }
-        }               
-       
-        private Price GetLowestRate(MarketsList tradingMarkets, TradingPair pair)
-        {
-            var lowest = new Price(decimal.MaxValue);
-
-            foreach(var market in tradingMarkets)
-            {
-                var exchangeProvider = GetExchangeProvider(market);
-
-                var current = exchangeProvider.GetCurrentCandlePrice(pair).Ask;
-                lowest = current < lowest ? current : lowest;
-            }
-
-            return lowest;
         }
-
-        private Price GetHighestRate(MarketsList tradingMarkets, TradingPair pair)
-        {
-            var highest = new Price(decimal.Zero);
-
-            foreach (var market in tradingMarkets)
-            {
-                var exchangeProvider = GetExchangeProvider(market);
-
-                var current = exchangeProvider.GetCurrentCandlePrice(pair).Ask;
-                highest = current > highest ? current : highest;
-            }
-
-            return highest;
-        }        
-
-    }
+    }  
 }

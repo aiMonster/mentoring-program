@@ -1,28 +1,42 @@
-﻿using MentoringProgram.Common.DataStructures;
-using MentoringProgram.Common.Enums;
+﻿using MentoringProgram.Common.Enums;
+using MentoringProgram.Common.Models;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace MentoringProgram.Common.Models
-{    
-    public class TradingRule
+namespace MentoringProgram.Common.Rules
+{
+    public class PriceReachedRule : BaseRule
     {
-        public MarketsList TradingMarkets { get; private set; } = new MarketsList();
-        public TradingPair Pair { get; private set; }
         public Price Boundary { get; private set; }
-        public PriceDirection PriceDirection { get; private set; }       
-        public PriceType PriceType { get; private set; }
+        public PriceDirection PriceDirection { get; private set; }
+        public PriceType PriceType { get; private set; }     
 
-        private TradingRule() { }
+        public override bool IsConditionMet(TradeUpdate tradeUpdate)
+        {
+            if (PriceDirection == PriceDirection.Down)
+            {
+                if (tradeUpdate.CandlePrice.Ask < Boundary)
+                {
+                    return true;
+                }
+            }
+            else if (PriceDirection == PriceDirection.Up)
+            {
+                if (tradeUpdate.CandlePrice.Ask > Boundary)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public class Builder
         {
-            TradingRule rule = new TradingRule();
+            PriceReachedRule rule = new PriceReachedRule();
 
             public Builder() { }
 
-            public Builder(TradingRule fromRule)
+            public Builder(PriceReachedRule fromRule)
             {
                 rule = fromRule;
             }
@@ -47,7 +61,7 @@ namespace MentoringProgram.Common.Models
                 return this;
             }
 
-            public TradingRule Build()
+            public PriceReachedRule Build()
             {
                 //TODO: validate all invalid fields
                 if (string.IsNullOrWhiteSpace(rule.Pair.Name))
