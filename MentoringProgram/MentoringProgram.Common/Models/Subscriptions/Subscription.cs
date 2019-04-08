@@ -7,6 +7,11 @@ namespace MentoringProgram.Common.Models.Subscriptions
         private Action OnDisposed;
         public Guid Id { get; }
 
+        private Subscription(Guid id)
+        {
+            Id = id;
+        }
+
         public Subscription(Guid id, Action onDisposed)
         {
             if (id == null || id == Guid.Empty)
@@ -23,6 +28,8 @@ namespace MentoringProgram.Common.Models.Subscriptions
         { }
 
         public override int GetHashCode() => Id.GetHashCode();
+
+        public static implicit operator Subscription(Guid id) => new Subscription(id);      
 
         public void Dispose()
         {

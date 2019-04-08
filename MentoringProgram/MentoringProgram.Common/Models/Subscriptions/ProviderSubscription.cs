@@ -4,12 +4,9 @@ using System.Text;
 
 namespace MentoringProgram.Common.Models.Subscriptions
 {
-    public class RuleSubscription
+    public class ProviderSubscription
     {
         public Subscription Subscription { get; set; }
-        public List<MarketSubscription> MarketSubscriptions { get; set; }
-
-        public override int GetHashCode() => Subscription.GetHashCode();
+        public List<PairSubscription> Subsciptions { get; set; } = new List<PairSubscription>();
     }
-
 }

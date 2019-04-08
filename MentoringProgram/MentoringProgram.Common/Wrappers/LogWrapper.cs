@@ -5,62 +5,44 @@ using System;
 
 namespace MentoringProgram.Common.Wrappers
 {
-    public class LogWrapper : IExchangeProvider
-    {
-        private readonly IExchangeProvider exchangeProvider;
-
-        public LogWrapper(IExchangeProvider provider)
+    public class LogWrapper : BaseWrapper
+    {       
+        private string Name { get; }
+        public LogWrapper(IExchangeProvider provider, string name) : base(provider)
         {
-            exchangeProvider = provider;
+            Name = name;
+        }
+  
+        public override void Connect()
+        {
+            Console.WriteLine($"{Name}: Connecting to exchange provider - {base.ToString()}");
+            base.Connect();
         }
 
-        public event Action OnDisconnected
-        {
-            add
-            {
-                exchangeProvider.OnDisconnected += value;
-            }
-            remove
-            {
-                exchangeProvider.OnDisconnected -= value;
-            }
+        public override void Dispose()
+        {            
+            Console.WriteLine($"{Name}: Our provider was disposed - {base.ToString()}");
+            base.Dispose();
         }
 
-        public void Connect()
+        public override ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
         {
-            Console.WriteLine("LogWrapper: Connecting to exchange provider - " + exchangeProvider.ToString());
-            exchangeProvider.Connect();
+            Console.WriteLine($"{Name}: Somebody has subscribed to pair - {pair.ToString()} ({base.ToString()})");
+            return base.Subscribe(pair, callback);
         }
 
-        public void Dispose()
+        public override void Unsubscribe(Guid subscriptionId)
         {
-            exchangeProvider.Dispose();
-            Console.WriteLine("LogWrapper: Our provider was disposed - " + exchangeProvider.ToString());
-        }
-
-        public Candle GetCurrentCandlePrice(TradingPair pair)
-        {
-            return exchangeProvider.GetCurrentCandlePrice(pair);
-        }
-
-        public ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
-        {
-            Console.WriteLine("LogWrapper: Somebody has subscribed to pair - " + pair.ToString());
-            return exchangeProvider.Subscribe(pair, callback);
-        }
-
-        public void Unsubscribe(Guid subscriptionId)
-        {
-            Console.WriteLine("LogWrapper: Somebody has unsubscribed");
-            exchangeProvider.Unsubscribe(subscriptionId);
+            Console.WriteLine($"{Name}: Somebody has unsubscribed ({base.ToString()})");            
+            base.Unsubscribe(subscriptionId);
         }
     }
 
     public static class LogWrapperExtension
     {
-        public static IExchangeProvider AttachLoger(this IExchangeProvider provider)
+        public static IExchangeProvider AttachLoger(this IExchangeProvider provider, string name = "LoggWrapper")
         {
-            return new LogWrapper(provider);
+            return new LogWrapper(provider, name);
         }
     }
 }

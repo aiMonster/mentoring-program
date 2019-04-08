@@ -2,6 +2,8 @@
 using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.Subscriptions;
 using MentoringProgram.Common.Rules;
+using MentoringProgram.Common.Rules.PriceReachedRule;
+using MentoringProgram.Common.Rules.PriceReachedRule.Enums;
 using System;
 using System.Linq;
 
@@ -11,16 +13,18 @@ namespace MentoringProgram.ConsoleClient
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Started ...");
+            Console.WriteLine("Started ... we will subscribe for two rules");
+            Console.WriteLine("Press enter to unsubscribe for one of them and see results ...\n");
 
             var manager = new MarketManager();           
-            manager.ConnectToExchangeProviders();          
-           
-            var s1 = SubscribeAndDisplay(manager);
-            var s2 = SubscribeAndSetUpAlert(manager);
-
+            manager.ConnectToExchangeProviders(); 
+            var s2 = SubscribeAndSetUpDefaultAlert(manager);
+            var s3 = SubscribeAndSetUpDefaultAlert(manager);
+            
             Console.ReadLine();
-            Console.WriteLine("Finished ...");            
+            manager.Unsubscribe(s2.Id);           
+            Console.WriteLine("Should be unsubscribed of one only, press enter to exit ...");
+            Console.ReadLine();
         }
 
         private static Subscription SubscribeAndDisplay(MarketManager marketManager)
@@ -67,6 +71,21 @@ namespace MentoringProgram.ConsoleClient
             Action alertCallback = () => Console.WriteLine("Heeyy, we broke boundary, writing you on telegram and viber");
             
             var subscription = marketManager.SubscribeRule(rule, alertCallback);
+            return subscription;
+        }
+
+        private static Subscription SubscribeAndSetUpDefaultAlert(MarketManager marketManager)
+        {
+            var rule = new PriceReachedRule.Builder()
+                                     .AddMarkets(TradingMarket.Bittrex)
+                                     .SetPair(new TradingPair("btc", "eth"))
+                                     .SetBoundary(new Price(0.033m), PriceDirection.Down, PriceType.Ask)
+                                     .Build();
+            Console.WriteLine("Set up default rule (Bittrex, BTC/ETH, will be notified when ask price will lower than 0.033)");
+            Action alertCallback = () => Console.WriteLine("Heeyy, we broke boundary, writing you on telegram and viber");
+                      
+            var subscription = marketManager.SubscribeRule(rule, alertCallback);
+
             return subscription;
         }
 

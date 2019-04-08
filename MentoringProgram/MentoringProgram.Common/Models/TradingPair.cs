@@ -9,8 +9,7 @@ namespace MentoringProgram.Common.Models
         public string Name { get { return Base + Quote; } }
 
         public TradingPair(string @base, string quote)
-        {
-            //TODO: Need validation on correct pair, e.g. bbc/dds - not valid
+        {            
             if(string.IsNullOrWhiteSpace(@base))
             {
                 throw new ArgumentOutOfRangeException(nameof(@base));

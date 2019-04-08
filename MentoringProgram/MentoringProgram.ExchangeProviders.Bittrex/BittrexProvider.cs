@@ -15,9 +15,9 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
     {
         private readonly BittrexSocketClient _bittrexSocketClient;
         private readonly BittrexClient _bittrexClient; 
+        
         private Dictionary<TradingPair, List<Subscriber>> Subscriptions = new Dictionary<TradingPair, List<Subscriber>>();
-
-        //But we don't know when client disconnects, so we call it in Dispose
+        
         public event Action OnDisconnected; 
 
         public BittrexProvider()
@@ -56,19 +56,18 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
                 
         public void Unsubscribe(Guid subscriptionId)
         {
-            var pairSubscriptions = Subscriptions.Where(s => s.Value.Any(v => v.SubscriptionId == subscriptionId)).FirstOrDefault();
-            if(pairSubscriptions.Value == null)
+            var subscription = Subscriptions.FirstOrDefault(s => s.Value.Any(sub => sub.SubscriptionId == subscriptionId));
+            if(subscription.Value == null)
             {
                 return;
             }
 
-            var toDelete = pairSubscriptions.Value.Where(s => s.SubscriptionId == subscriptionId).FirstOrDefault();
-            pairSubscriptions.Value.Remove(toDelete);
-
-            if (!pairSubscriptions.Value.Any())
+            var subscriber = subscription.Value.FirstOrDefault(s => s.SubscriptionId == subscriptionId);
+            subscription.Value.Remove(subscriber);
+            if (!subscription.Value.Any())
             {
-                Subscriptions.Remove(pairSubscriptions.Key);
-            }
+                Subscriptions.Remove(subscription.Key);
+            }           
         }
 
         public void Dispose()

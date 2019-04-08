@@ -12,21 +12,24 @@ using System.Linq;
 
 namespace MentoringProgram.ConsoleClient
 {
-    
     public class MarketManager
     {
         IExchangeProvider _bitfinexProvider { get; }
         IExchangeProvider _bittrexProvider { get; }
 
-        private Dictionary<BaseRule, RuleSubscription> Subscriptions = new Dictionary<BaseRule, RuleSubscription>();
+        private Dictionary<BaseRule, ClientMarketSubscriptions> Subscriptions = new Dictionary<BaseRule, ClientMarketSubscriptions>();
 
         public MarketManager()
         {
-            //Note that if we change alwaysOn with Log, result will be completele different as we use ToString
-            //Looks like we should override this method in AlwaysOn as well
-            //new BitfinexProvider().AlwaysOn().Log();
-            _bitfinexProvider = new BitfinexProvider().AttachLoger().AlwaysOn();
-            _bittrexProvider = new BittrexProvider().AttachLoger().AlwaysOn();
+            _bitfinexProvider = new BitfinexProvider().AttachLoger("Logger1")
+                                                      .AttachSubscriptionDublicatesWrapper()
+                                                      .AttachLoger("Logger2")
+                                                      .AttachAlwaysOn();
+
+            _bittrexProvider = new BittrexProvider().AttachLoger("Log1")
+                                                    .AttachSubscriptionDublicatesWrapper()
+                                                    .AttachLoger("Log2")
+                                                    .AttachAlwaysOn();
         }
 
         public void ConnectToExchangeProviders()
@@ -34,53 +37,67 @@ namespace MentoringProgram.ConsoleClient
             _bitfinexProvider.Connect();
             _bittrexProvider.Connect();
         }
-
-        public Subscription SubscribeRule(BaseRule rule, Action callback)
+        public void Notify(BaseRule rule, TradeUpdate update)
         {
-            if (Subscriptions.ContainsKey(rule))
+            if (!Subscriptions.ContainsKey(rule))
             {
-                return Subscriptions[rule].Subscription;
+                return; 
             }
 
-            Action<TradeUpdate> marketCallback = (update) =>
-            {
-                Console.WriteLine(update.CandlePrice.Ask);
-                if (rule.IsConditionMet(update))
-                {
-                    callback?.Invoke();
-                }
-            };
-
-            var subscriptionId = Guid.NewGuid();
-
-            var ruleSubscription = new RuleSubscription();
-            ruleSubscription.Subscription = new Subscription(subscriptionId, () => Unsubscribe(subscriptionId));
-            ruleSubscription.MarketSubscriptions = new List<MarketSubscription>();
-
-            foreach (var market in rule.TradingMarkets)
-            {
-                var provider = GetExchangeProvider(market);
-                var subscription = provider.Subscribe(rule.Pair, marketCallback);
-
-                var marketSubscription = new MarketSubscription(subscription.Data, market);
-
-                ruleSubscription.MarketSubscriptions.Add(marketSubscription);
-            }
-
-            return ruleSubscription.Subscription;
-        }       
-
-        public void Unsubscribe(Guid subscriptionId)
-        {
-            var subscription = Subscriptions.FirstOrDefault(v => v.Value.Subscription.Id == subscriptionId);
-            if(subscription.Value == null)
+            if(!rule.IsConditionMet(update))
             {
                 return;
             }
 
-            foreach(var marketSubscription in subscription.Value.MarketSubscriptions)
+            foreach(var clientSubscription in Subscriptions[rule].ClientSubscriptions)
             {
-                marketSubscription.Dispose();
+                Console.WriteLine(update.CandlePrice.Ask);
+                clientSubscription.Callback?.Invoke();                
+            }            
+        }
+
+        public Subscription SubscribeRule(BaseRule rule, Action callback)
+        {
+            if (!Subscriptions.ContainsKey(rule))
+            {
+                Subscriptions[rule] = new ClientMarketSubscriptions();
+
+                foreach(var market in rule.TradingMarkets)
+                {
+                    var provider = GetExchangeProvider(market);
+                    var response = provider.Subscribe(rule.Pair, (update) => Notify(rule, update));
+                    var marketSubscription = new MarketSubscription(response.Data, market);
+                    Subscriptions[rule].MarketSubscriptions.Add(marketSubscription);
+                }
+            }
+
+            var subscriptionId = Guid.NewGuid();
+            var subscription = new Subscription(subscriptionId, () => Unsubscribe(subscriptionId));
+
+            var clientSubscription = new ClientSubscription(subscription, callback);
+            Subscriptions[rule].ClientSubscriptions.Add(clientSubscription);
+
+            return subscription;
+        }
+
+        public void Unsubscribe(Guid subscriptionId)
+        {
+            var subscription = Subscriptions.FirstOrDefault(v => v.Value.ClientSubscriptions.Any(ss => ss.Subscription.Id == subscriptionId));
+            if (subscription.Value == null)
+            {
+                return;
+            }
+
+            var subscriber = subscription.Value.ClientSubscriptions.FirstOrDefault(s => s.Subscription.Id == subscriptionId);
+            subscription.Value.ClientSubscriptions.Remove(subscriber);
+
+            if (!subscription.Value.ClientSubscriptions.Any())
+            {
+                foreach(var marketSubscription in subscription.Value.MarketSubscriptions)
+                {
+                    var provider = GetExchangeProvider(marketSubscription.Market);
+                    provider.Unsubscribe(marketSubscription.Id);
+                }
             }
 
             Subscriptions.Remove(subscription.Key);
