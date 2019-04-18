@@ -2,6 +2,7 @@
 using Bittrex.Net.Objects;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using MentoringProgram.ExchangeProviders.Bittrex.Extensions;
 using MentoringProgram.ExchangeProviders.Bittrex.Models;
@@ -14,9 +15,9 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
     public class BittrexProvider : IExchangeProvider
     {
         private readonly BittrexSocketClient _bittrexSocketClient;
-        private readonly BittrexClient _bittrexClient; 
-        
-        private Dictionary<TradingPair, List<Subscriber>> Subscriptions = new Dictionary<TradingPair, List<Subscriber>>();
+        private readonly BittrexClient _bittrexClient;
+
+        private Dictionary<Subscriber, TradingPair> Subscriptions = new Dictionary<Subscriber, TradingPair>();        
         
         public event Action OnDisconnected; 
 
@@ -36,38 +37,24 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
             var candle = _bittrexClient.GetTicker(pair.ToBittrexPair()).Data;
             return new Candle((Price)candle.Bid, (Price)candle.Ask);    
         }
-
-        //TODO: Check if pair is supported by this provider
+       
         public ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
-        {     
-            if (!Subscriptions.ContainsKey(pair))
-            {
-                Subscriptions[pair] = new List<Subscriber>();
-            }
-
+        {  
             var newSubscriptionId = Guid.NewGuid();
+            var subscriber = new Subscriber(newSubscriptionId, callback);
 
-            Subscriptions[pair].Add(new Subscriber(newSubscriptionId, callback));
+            Subscriptions.Add(subscriber, pair);            
 
-            var subscription = new Subscription(newSubscriptionId, () => Unsubscribe(newSubscriptionId));           
-
+            var subscription = new Subscription(newSubscriptionId, () => Unsubscribe(newSubscriptionId)); 
             return new ResponseResult<Subscription>(subscription);
         }
                 
-        public void Unsubscribe(Guid subscriptionId)
+        public void Unsubscribe(PairSubscriptionGuid pairSubscriptionId)
         {
-            var subscription = Subscriptions.FirstOrDefault(s => s.Value.Any(sub => sub.SubscriptionId == subscriptionId));
-            if(subscription.Value == null)
+            if (Subscriptions.ContainsKey(pairSubscriptionId))
             {
-                return;
+                Subscriptions.Remove(pairSubscriptionId);
             }
-
-            var subscriber = subscription.Value.FirstOrDefault(s => s.SubscriptionId == subscriptionId);
-            subscription.Value.Remove(subscriber);
-            if (!subscription.Value.Any())
-            {
-                Subscriptions.Remove(subscription.Key);
-            }           
         }
 
         public void Dispose()
@@ -87,14 +74,12 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
         private void InvokeMarketUpdateCallbacks(BittrexStreamMarketSummary summary)
         {
             var pair = summary.MarketName.ToTradingPair();
-            if (!Subscriptions.ContainsKey(pair))
-            {
-                return;
-            }
 
-            foreach (var subscriber in Subscriptions[pair])
+            var callbacks = Subscriptions.Where(s => s.Value.Equals(pair)).Select(s => s.Key.Callback);
+            
+            foreach (var callback in callbacks)
             {
-                subscriber.Callback?.Invoke(summary.ToTradeUpdate());
+                callback?.Invoke(summary.ToTradeUpdate());
             }
         }
 
@@ -102,15 +87,14 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
         {
             _bittrexSocketClient.SubscribeToMarketSummariesUpdate(data =>
             {
-                var subscribedPairs = data.Where(d => Subscriptions.Keys.Contains(d.MarketName.ToTradingPair())).ToList();
-
+                var subscribedPairs = data.Where(d => Subscriptions.Values.Contains(d.MarketName.ToTradingPair())).ToList();
+                
                 foreach (var marketSummary in subscribedPairs)
                 {
                     InvokeMarketUpdateCallbacks(marketSummary);
                 }
             });
-        }
-        
+        }        
 
         #endregion
 

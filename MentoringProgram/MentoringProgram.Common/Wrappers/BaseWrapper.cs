@@ -1,11 +1,12 @@
 ﻿using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using System;
 
 namespace MentoringProgram.Common.Wrappers
 {
-    public class BaseWrapper : IExchangeProvider
+    public abstract class BaseWrapper : IExchangeProvider
     {
         private readonly IExchangeProvider exchangeProvider;
 
@@ -28,8 +29,9 @@ namespace MentoringProgram.Common.Wrappers
 
         public virtual ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback) => exchangeProvider.Subscribe(pair, callback);
 
-        public virtual void Unsubscribe(Guid subscriptionId) => exchangeProvider.Unsubscribe(subscriptionId);
+        public virtual void Unsubscribe(PairSubscriptionGuid pairSubscriptionId) => exchangeProvider.Unsubscribe(pairSubscriptionId);
 
         public override string ToString() => exchangeProvider.ToString();        
+
     }
 }

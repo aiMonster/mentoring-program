@@ -1,11 +1,13 @@
 ﻿using MentoringProgram.Common.Enums;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using MentoringProgram.Common.Rules;
 using MentoringProgram.Common.Wrappers;
 using MentoringProgram.ExchangeProviders.Bitfinex;
 using MentoringProgram.ExchangeProviders.Bittrex;
+using MentoringProgram.Tests.ExchangeProviders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,19 +19,24 @@ namespace MentoringProgram.ConsoleClient
         IExchangeProvider _bitfinexProvider { get; }
         IExchangeProvider _bittrexProvider { get; }
 
+        IExchangeProvider _testProvider { get; set; }
+
         private Dictionary<BaseRule, ClientMarketSubscriptions> Subscriptions = new Dictionary<BaseRule, ClientMarketSubscriptions>();
 
         public MarketManager()
         {
             _bitfinexProvider = new BitfinexProvider().AttachLoger("Logger1")
+                                                      .AttachAutoResubscribeWrapper()
                                                       .AttachSubscriptionDublicatesWrapper()
                                                       .AttachLoger("Logger2")
                                                       .AttachAlwaysOn();
 
             _bittrexProvider = new BittrexProvider().AttachLoger("Log1")
+                                                    .AttachAutoResubscribeWrapper()
                                                     .AttachSubscriptionDublicatesWrapper()
                                                     .AttachLoger("Log2")
                                                     .AttachAlwaysOn();
+         
         }
 
         public void ConnectToExchangeProviders()
@@ -80,15 +87,15 @@ namespace MentoringProgram.ConsoleClient
             return subscription;
         }
 
-        public void Unsubscribe(Guid subscriptionId)
+        public void Unsubscribe(RuleSubscriptionGuid ruleSubscriptionId)
         {
-            var subscription = Subscriptions.FirstOrDefault(v => v.Value.ClientSubscriptions.Any(ss => ss.Subscription.Id == subscriptionId));
+            var subscription = Subscriptions.FirstOrDefault(v => v.Value.ContainsRuleSubscription(ruleSubscriptionId));
             if (subscription.Value == null)
             {
                 return;
             }
 
-            var subscriber = subscription.Value.ClientSubscriptions.FirstOrDefault(s => s.Subscription.Id == subscriptionId);
+            var subscriber = subscription.Value.GetClientSubscription(ruleSubscriptionId);
             subscription.Value.ClientSubscriptions.Remove(subscriber);
 
             if (!subscription.Value.ClientSubscriptions.Any())

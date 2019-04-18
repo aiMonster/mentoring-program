@@ -13,6 +13,12 @@ namespace MentoringProgram.Common.Wrappers
         {            
             base.Connect();
         }
+
+        public override void Dispose()
+        {
+            base.OnDisconnected -= HandleDisconnecting;
+            base.Dispose();
+        }
     }
 
     public static class AlwaysOnExtension

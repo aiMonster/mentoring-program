@@ -2,6 +2,7 @@
 using CryptoExchange.Net.Sockets;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using MentoringProgram.ExchangeProviders.Bitfinex.Extensions;
 using System;
@@ -57,13 +58,13 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
             return new ResponseResult<Subscription>(subscription);
         }
         
-        public void Unsubscribe(Guid subscriptionId)
+        public void Unsubscribe(PairSubscriptionGuid pairSubscriptionId)
         {            
-            if(Subscriptions.ContainsKey(subscriptionId))
+            if(Subscriptions.ContainsKey(pairSubscriptionId))
             {
-                var subscription = Subscriptions[subscriptionId];
+                var subscription = Subscriptions[pairSubscriptionId];
                 subscription.Close();
-                Subscriptions.Remove(subscriptionId);
+                Subscriptions.Remove(pairSubscriptionId);
             }
         }
 

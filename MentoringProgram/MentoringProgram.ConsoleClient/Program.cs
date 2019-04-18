@@ -6,6 +6,7 @@ using MentoringProgram.Common.Rules.PriceReachedRule;
 using MentoringProgram.Common.Rules.PriceReachedRule.Enums;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MentoringProgram.ConsoleClient
 {
@@ -13,13 +14,18 @@ namespace MentoringProgram.ConsoleClient
     {
         static void Main(string[] args)
         {
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                Console.WriteLine("An exception was thrown!");
+            };
+
             Console.WriteLine("Started ... we will subscribe for two rules");
             Console.WriteLine("Press enter to unsubscribe for one of them and see results ...\n");
 
             var manager = new MarketManager();           
             manager.ConnectToExchangeProviders(); 
             var s2 = SubscribeAndSetUpDefaultAlert(manager);
-            var s3 = SubscribeAndSetUpDefaultAlert(manager);
+            //var s3 = SubscribeAndSetUpDefaultAlert(manager);
             
             Console.ReadLine();
             manager.Unsubscribe(s2.Id);           
@@ -79,9 +85,9 @@ namespace MentoringProgram.ConsoleClient
             var rule = new PriceReachedRule.Builder()
                                      .AddMarkets(TradingMarket.Bittrex)
                                      .SetPair(new TradingPair("btc", "eth"))
-                                     .SetBoundary(new Price(0.033m), PriceDirection.Down, PriceType.Ask)
+                                     .SetBoundary(new Price(0.01m), PriceDirection.Up, PriceType.Ask)
                                      .Build();
-            Console.WriteLine("Set up default rule (Bittrex, BTC/ETH, will be notified when ask price will lower than 0.033)");
+            Console.WriteLine("Set up default rule (Bittrex, BTC/ETH, will be notified when ask price will higher than 0.001)");
             Action alertCallback = () => Console.WriteLine("Heeyy, we broke boundary, writing you on telegram and viber");
                       
             var subscription = marketManager.SubscribeRule(rule, alertCallback);

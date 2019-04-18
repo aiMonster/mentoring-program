@@ -1,4 +1,5 @@
 ﻿using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.SubscriptionIds;
 using System;
 
 namespace MentoringProgram.ExchangeProviders.Bittrex.Models
@@ -7,6 +8,12 @@ namespace MentoringProgram.ExchangeProviders.Bittrex.Models
     {
         public Guid SubscriptionId { get; }
         public Action<TradeUpdate> Callback { get; }
+
+        private Subscriber(Guid subscriptionId)
+        {
+            SubscriptionId = subscriptionId;
+            Callback = null;
+        }
 
         public Subscriber(Guid subscriptionId, Action<TradeUpdate> callback)
         {
@@ -30,5 +37,8 @@ namespace MentoringProgram.ExchangeProviders.Bittrex.Models
         {
             return SubscriptionId.GetHashCode();
         }
+
+        public static implicit operator Subscriber(Guid id) => new Subscriber(id);
+        public static implicit operator Subscriber(PairSubscriptionGuid pairSubscription) => new Subscriber(pairSubscription.Id);
     }
 }

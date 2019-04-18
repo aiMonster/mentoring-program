@@ -1,5 +1,6 @@
 ﻿using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using System;
 using System.Collections.Generic;
@@ -28,15 +29,15 @@ namespace MentoringProgram.Common.Wrappers
             return new ResponseResult<Subscription>(subscription);
         }
                 
-        public override void Unsubscribe(Guid subscriptionId)
+        public override void Unsubscribe(PairSubscriptionGuid pairSubscriptionId)
         {
-            var subscription = PairSubscriptions.FirstOrDefault(s => s.Value.Subsciptions.Any(ss => ss.Subscription.Id == subscriptionId));
+            var subscription = PairSubscriptions.FirstOrDefault(s => s.Value.ContainsPairSubscription(pairSubscriptionId));
             if(subscription.Value == null)
             {
                 return;
             }
 
-            var subscriber = subscription.Value.Subsciptions.FirstOrDefault(s => s.Subscription.Id == subscriptionId);
+            var subscriber = subscription.Value.GetPairSubscription(pairSubscriptionId);
             subscription.Value.Subsciptions.Remove(subscriber);
 
             if (!subscription.Value.Subsciptions.Any())

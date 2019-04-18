@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MentoringProgram.Common.Models.SubscriptionIds;
+using System;
 
 namespace MentoringProgram.Common.Models.Subscriptions
 {
@@ -29,7 +30,8 @@ namespace MentoringProgram.Common.Models.Subscriptions
 
         public override int GetHashCode() => Id.GetHashCode();
 
-        public static implicit operator Subscription(Guid id) => new Subscription(id);      
+        public static implicit operator Subscription(Guid id) => new Subscription(id);
+        public static implicit operator Subscription(PairSubscriptionGuid pairSubscription) => new Subscription(pairSubscription.Id);
 
         public void Dispose()
         {

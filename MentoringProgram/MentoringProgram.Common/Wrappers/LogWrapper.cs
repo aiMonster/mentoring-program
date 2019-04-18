@@ -1,5 +1,6 @@
 ﻿using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
+using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using System;
 
@@ -31,10 +32,10 @@ namespace MentoringProgram.Common.Wrappers
             return base.Subscribe(pair, callback);
         }
 
-        public override void Unsubscribe(Guid subscriptionId)
+        public override void Unsubscribe(PairSubscriptionGuid pairSubscriptionId)
         {
             Console.WriteLine($"{Name}: Somebody has unsubscribed ({base.ToString()})");            
-            base.Unsubscribe(subscriptionId);
+            base.Unsubscribe(pairSubscriptionId);
         }
     }
 

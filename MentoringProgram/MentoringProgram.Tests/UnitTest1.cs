@@ -46,7 +46,7 @@ namespace MentoringProgram.Tests
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
             {
                 //How to handle input structures?
-                var rule = new PriceReachedRule.Builder().SetPair(TradingPair.BTCUSD).Build();
+                //var rule = new PriceReachedRule.Builder().SetPair(TradingPair.BTCUSD).Build();
                 //var rule2 = new TradingRule.Builder(rule).SetPair(new TradingPair()).Build();
             });
         }
