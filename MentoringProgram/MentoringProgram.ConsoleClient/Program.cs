@@ -24,11 +24,11 @@ namespace MentoringProgram.ConsoleClient
 
             var manager = new MarketManager();           
             manager.ConnectToExchangeProviders(); 
-            var s2 = SubscribeAndSetUpDefaultAlert(manager);
+            var s2 = SubscribeAndSetUpDefaultAlertAsync(manager).Result;
             //var s3 = SubscribeAndSetUpDefaultAlert(manager);
             
             Console.ReadLine();
-            manager.Unsubscribe(s2.Id);           
+            manager.UnsubscribeAsync(s2.Id).Wait();           
             Console.WriteLine("Should be unsubscribed of one only, press enter to exit ...");
             Console.ReadLine();
         }
@@ -66,7 +66,7 @@ namespace MentoringProgram.ConsoleClient
             return null;
         }
 
-        private static Subscription SubscribeAndSetUpAlert(MarketManager marketManager)
+        private static async Task<Subscription> SubscribeAndSetUpAlertAsync(MarketManager marketManager)
         {
             var rule = new PriceReachedRule.Builder()
                                      .AddMarkets(GetMarketsFromUser())
@@ -76,11 +76,11 @@ namespace MentoringProgram.ConsoleClient
 
             Action alertCallback = () => Console.WriteLine("Heeyy, we broke boundary, writing you on telegram and viber");
             
-            var subscription = marketManager.SubscribeRule(rule, alertCallback);
+            var subscription = await marketManager.SubscribeRuleAsync(rule, alertCallback);
             return subscription;
         }
 
-        private static Subscription SubscribeAndSetUpDefaultAlert(MarketManager marketManager)
+        private static async Task<Subscription> SubscribeAndSetUpDefaultAlertAsync(MarketManager marketManager)
         {
             var rule = new PriceReachedRule.Builder()
                                      .AddMarkets(TradingMarket.Bittrex)
@@ -90,7 +90,7 @@ namespace MentoringProgram.ConsoleClient
             Console.WriteLine("Set up default rule (Bittrex, BTC/ETH, will be notified when ask price will higher than 0.001)");
             Action alertCallback = () => Console.WriteLine("Heeyy, we broke boundary, writing you on telegram and viber");
                       
-            var subscription = marketManager.SubscribeRule(rule, alertCallback);
+            var subscription = await marketManager.SubscribeRuleAsync(rule, alertCallback);
 
             return subscription;
         }

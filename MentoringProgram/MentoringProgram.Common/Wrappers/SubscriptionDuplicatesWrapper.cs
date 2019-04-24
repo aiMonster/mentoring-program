@@ -5,46 +5,67 @@ using MentoringProgram.Common.Models.Subscriptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MentoringProgram.Common.Wrappers
 {    
     public class SubscriptionDublicatesWrapper : BaseWrapper
-    {        
+    {
+        private SemaphoreSlim SemaphoreForSubscribe = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim SemaphoreForUnsubscribe = new SemaphoreSlim(1, 1);
         private Dictionary<TradingPair, ProviderSubscription> PairSubscriptions { get; } = new Dictionary<TradingPair, ProviderSubscription>();
 
         public SubscriptionDublicatesWrapper(IExchangeProvider provider) : base(provider) { }
 
-        public override ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
+        public override async Task<ResponseResult<Subscription>> SubscribeAsync(TradingPair pair, Action<TradeUpdate> callback)
         {
-            if (!PairSubscriptions.ContainsKey(pair))
+            await SemaphoreForSubscribe.WaitAsync();
+            try
             {
-                var response = base.Subscribe(pair, NotifySubscribers);
-                PairSubscriptions.Add(pair, new ProviderSubscription { Subscription = response.Data });
+                if (!PairSubscriptions.ContainsKey(pair))
+                {
+                    var response = await base.SubscribeAsync(pair, NotifySubscribers);
+                    PairSubscriptions.Add(pair, new ProviderSubscription { Subscription = response.Data });
+                }
             }
+            finally
+            {
+                SemaphoreForSubscribe.Release();
+            }            
            
             var id = Guid.NewGuid();
-            var subscription = new Subscription(id, () => Unsubscribe(id));
+            var subscription = new Subscription(id, async () => await UnsubscribeAsync(id));
 
             PairSubscriptions[pair].Subsciptions.Add(new PairSubscription(subscription, callback));
             return new ResponseResult<Subscription>(subscription);
         }
                 
-        public override void Unsubscribe(PairSubscriptionGuid pairSubscriptionId)
+        public override async Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId)
         {
-            var subscription = PairSubscriptions.FirstOrDefault(s => s.Value.ContainsPairSubscription(pairSubscriptionId));
-            if(subscription.Value == null)
+            await SemaphoreForUnsubscribe.WaitAsync();
+
+            try
             {
-                return;
+                var subscription = PairSubscriptions.FirstOrDefault(s => s.Value.ContainsPairSubscription(pairSubscriptionId));
+                if (subscription.Value == null)
+                {
+                    return;
+                }
+
+                var subscriber = subscription.Value.GetPairSubscription(pairSubscriptionId);
+                subscription.Value.Subsciptions.Remove(subscriber);
+
+                if (!subscription.Value.Subsciptions.Any())
+                {
+                    await base.UnsubscribeAsync(subscription.Value.Subscription.Id);
+                    PairSubscriptions.Remove(subscription.Key);
+                }
             }
-
-            var subscriber = subscription.Value.GetPairSubscription(pairSubscriptionId);
-            subscription.Value.Subsciptions.Remove(subscriber);
-
-            if (!subscription.Value.Subsciptions.Any())
+            finally
             {
-                base.Unsubscribe(subscription.Value.Subscription.Id);
-                PairSubscriptions.Remove(subscription.Key);
-            }            
+                SemaphoreForUnsubscribe.Release();
+            }                   
         }
 
         private void NotifySubscribers(TradeUpdate update)

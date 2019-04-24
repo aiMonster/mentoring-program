@@ -2,6 +2,7 @@
 using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using System;
+using System.Threading.Tasks;
 
 namespace MentoringProgram.Common.Interfaces
 {
@@ -9,8 +10,8 @@ namespace MentoringProgram.Common.Interfaces
     {
         event Action OnDisconnected;
         void Connect();
-        ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback);
-        void Unsubscribe(PairSubscriptionGuid pairSubscriptionId);
+        Task<ResponseResult<Subscription>> SubscribeAsync(TradingPair pair, Action<TradeUpdate> callback);
+        Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId);
         Candle GetCurrentCandlePrice(TradingPair pair);
     }
 }

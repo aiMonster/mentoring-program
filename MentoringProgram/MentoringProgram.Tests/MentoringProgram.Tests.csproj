@@ -51,15 +51,16 @@
   <ItemGroup>
     <Compile Include="AutoResubscribeAndAlwaysOnWrappersTest.cs" />
     <Compile Include="DuplicatesWrapperTest.cs" />
-    <Compile Include="ExchangeProviders\TestExchangeProvider.cs" />
-    <Compile Include="StructTest.cs" />
-    <Compile Include="UnitTest1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\MentoringProgram,ExchangeProviders.Fake\MentoringProgram.ExchangeProviders.Fake.csproj">
+      <Project>{E1974F47-3C2A-4AAB-8BFC-499509C04311}</Project>
+      <Name>MentoringProgram.ExchangeProviders.Fake</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MentoringProgram.Common\MentoringProgram.Common.csproj">
       <Project>{7B9658CC-53D4-4922-8604-C97C289BB4CD}</Project>
       <Name>MentoringProgram.Common</Name>

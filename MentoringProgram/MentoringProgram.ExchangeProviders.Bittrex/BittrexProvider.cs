@@ -9,11 +9,13 @@ using MentoringProgram.ExchangeProviders.Bittrex.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MentoringProgram.ExchangeProviders.Bittrex
 {
     public class BittrexProvider : IExchangeProvider
     {
+        private object Locker { get; set; } = new object();
         private readonly BittrexSocketClient _bittrexSocketClient;
         private readonly BittrexClient _bittrexClient;
 
@@ -29,6 +31,7 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
 
         public void Connect()
         {
+            _bittrexSocketClient.OnDisconnected += OnDisconnected;
             StartReceiveUpdates();
         }
 
@@ -38,28 +41,37 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
             return new Candle((Price)candle.Bid, (Price)candle.Ask);    
         }
        
-        public ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
+        public async Task<ResponseResult<Subscription>> SubscribeAsync(TradingPair pair, Action<TradeUpdate> callback)
         {  
             var newSubscriptionId = Guid.NewGuid();
             var subscriber = new Subscriber(newSubscriptionId, callback);
 
             Subscriptions.Add(subscriber, pair);            
 
-            var subscription = new Subscription(newSubscriptionId, () => Unsubscribe(newSubscriptionId)); 
+            var subscription = new Subscription(newSubscriptionId, async () => await UnsubscribeAsync(newSubscriptionId));
+
+            await Task.CompletedTask;
             return new ResponseResult<Subscription>(subscription);
         }
                 
-        public void Unsubscribe(PairSubscriptionGuid pairSubscriptionId)
+        public async Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId)
         {
-            if (Subscriptions.ContainsKey(pairSubscriptionId))
+            lock (Locker)
             {
-                Subscriptions.Remove(pairSubscriptionId);
+                if (Subscriptions.ContainsKey(pairSubscriptionId))
+                {
+                    Subscriptions.Remove(pairSubscriptionId);
+                }
             }
+
+            await Task.CompletedTask;
         }
 
         public void Dispose()
         {
             OnDisconnected();
+
+            _bittrexSocketClient.OnDisconnected -= OnDisconnected;
             _bittrexClient.Dispose();
             _bittrexSocketClient.Dispose();
         }

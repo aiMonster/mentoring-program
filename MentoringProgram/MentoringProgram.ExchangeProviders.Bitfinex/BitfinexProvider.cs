@@ -8,11 +8,14 @@ using MentoringProgram.ExchangeProviders.Bitfinex.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MentoringProgram.ExchangeProviders.Bitfinex
 {
     public class BitfinexProvider : IExchangeProvider
     {
+        private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         private readonly BitfinexSocketClient _bitfinexSocketClient;
         private readonly BitfinexClient _bitfinexClient;
 
@@ -28,7 +31,7 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
 
         public void Connect()
         {
-          
+            _bitfinexSocketClient.OnDisconnected += OnDisconnected;
         }
 
         public Candle GetCurrentCandlePrice(TradingPair pair)
@@ -37,9 +40,9 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
             return new Candle((Price)result.Bid, (Price)result.Ask);
         }
 
-        public ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
+        public async Task<ResponseResult<Subscription>> SubscribeAsync(TradingPair pair, Action<TradeUpdate> callback)
         {
-            var response = _bitfinexSocketClient.SubscribeToTickerUpdates(pair.ToBitfinexPair(), (data) =>
+            var response = await _bitfinexSocketClient.SubscribeToTickerUpdatesAsync(pair.ToBitfinexPair(), (data) =>
             {
                 var candle = data.ToCandle();
                 var update = new TradeUpdate(pair, candle);
@@ -52,25 +55,35 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
             }
 
             var id = Guid.NewGuid();
-            var subscription = new Subscription(id, () => Unsubscribe(id));
+            var subscription = new Subscription(id, async () => await UnsubscribeAsync(id));
             Subscriptions.Add(subscription, response.Data);
 
             return new ResponseResult<Subscription>(subscription);
         }
         
-        public void Unsubscribe(PairSubscriptionGuid pairSubscriptionId)
-        {            
-            if(Subscriptions.ContainsKey(pairSubscriptionId))
+        public async Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId)
+        {
+            await Semaphore.WaitAsync();
+            try
             {
-                var subscription = Subscriptions[pairSubscriptionId];
-                subscription.Close();
-                Subscriptions.Remove(pairSubscriptionId);
+                if (Subscriptions.ContainsKey(pairSubscriptionId))
+                {
+                    var subscription = Subscriptions[pairSubscriptionId];
+                    await subscription.Close();
+                    Subscriptions.Remove(pairSubscriptionId);
+                }
             }
+            finally
+            {
+                Semaphore.Release();
+            }    
         }
 
         public void Dispose()
         {
             OnDisconnected();
+
+            _bitfinexSocketClient.OnDisconnected -= OnDisconnected;
             _bitfinexSocketClient.Dispose();
             _bitfinexClient.Dispose();
         }

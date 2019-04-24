@@ -6,28 +6,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MentoringProgram.Common.Wrappers
 {  
     public class AutoResubscribeWrapper : BaseWrapper
     {
+        private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         private Dictionary<TradingPair, ResubscribeSubscription> PairSubscriptions { get; } = new Dictionary<TradingPair, ResubscribeSubscription>();
 
         public AutoResubscribeWrapper(IExchangeProvider provider) : base(provider) { }
 
-        public override void Connect()
+        public override async void Connect()
         { 
             base.Connect();
             foreach (var subscription in PairSubscriptions)
             {
-                var response = base.Subscribe(subscription.Key, subscription.Value.Callback);
+                var response = await base.SubscribeAsync(subscription.Key, subscription.Value.Callback);
                 subscription.Value.ProviderSubscription = response.Data;
             }
         }
 
-        public override ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
+        public override async Task<ResponseResult<Subscription>> SubscribeAsync(TradingPair pair, Action<TradeUpdate> callback)
         {            
-            var response = base.Subscribe(pair, callback);
+            var response = await base.SubscribeAsync(pair, callback);
             PairSubscriptions[pair] = new ResubscribeSubscription
             {
                 ProviderSubscription = response.Data,
@@ -38,14 +41,22 @@ namespace MentoringProgram.Common.Wrappers
             return response;
         }
 
-        public override void Unsubscribe(PairSubscriptionGuid pairSubscriptionId)
+        public override async Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId)
         {
-            var pairSubscription = PairSubscriptions.FirstOrDefault(s => s.Value.ClientSubscription.Id == pairSubscriptionId);
-            if(pairSubscription.Value != null)
+            await Semaphore.WaitAsync();
+            try
             {
-                base.Unsubscribe(pairSubscription.Value.ProviderSubscription.Id);
-                PairSubscriptions.Remove(pairSubscription.Key);
-            }            
+                var pairSubscription = PairSubscriptions.FirstOrDefault(s => s.Value.ClientSubscription.Id == pairSubscriptionId);
+                if (pairSubscription.Value != null)
+                {
+                    await base.UnsubscribeAsync(pairSubscription.Value.ProviderSubscription.Id);
+                    PairSubscriptions.Remove(pairSubscription.Key);
+                }
+            }
+            finally
+            {
+                Semaphore.Release();
+            }               
         }
 
         public override void Dispose()

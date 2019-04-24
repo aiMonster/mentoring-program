@@ -191,10 +191,6 @@
       <Project>{5b25062a-5c89-4a73-8c22-fa91614a6161}</Project>
       <Name>MentoringProgram.MarketClients</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MentoringProgram.Tests\MentoringProgram.Tests.csproj">
-      <Project>{3A9A8B87-9C79-4862-8217-754AE5FA072B}</Project>
-      <Name>MentoringProgram.Tests</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

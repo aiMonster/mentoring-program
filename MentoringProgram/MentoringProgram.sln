@@ -15,7 +15,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MentoringProgram.ExchangePr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MentoringProgram.Tests", "MentoringProgram.Tests\MentoringProgram.Tests.csproj", "{3A9A8B87-9C79-4862-8217-754AE5FA072B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MentoringProgram.ExchangeProviders.Bittrex", "MentoringProgram.ExchangeProviders.Bittrex\MentoringProgram.ExchangeProviders.Bittrex.csproj", "{A6925994-CD80-49DA-9C3D-35E6D40BBFEF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MentoringProgram.ExchangeProviders.Bittrex", "MentoringProgram.ExchangeProviders.Bittrex\MentoringProgram.ExchangeProviders.Bittrex.csproj", "{A6925994-CD80-49DA-9C3D-35E6D40BBFEF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MentoringProgram.ExchangeProviders.Fake", "MentoringProgram,ExchangeProviders.Fake\MentoringProgram.ExchangeProviders.Fake.csproj", "{E1974F47-3C2A-4AAB-8BFC-499509C04311}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +49,10 @@ Global
 		{A6925994-CD80-49DA-9C3D-35E6D40BBFEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6925994-CD80-49DA-9C3D-35E6D40BBFEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6925994-CD80-49DA-9C3D-35E6D40BBFEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1974F47-3C2A-4AAB-8BFC-499509C04311}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1974F47-3C2A-4AAB-8BFC-499509C04311}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1974F47-3C2A-4AAB-8BFC-499509C04311}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1974F47-3C2A-4AAB-8BFC-499509C04311}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +60,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{A1926A38-0BCC-4006-84D4-8A24D3487F69} = {C4107CE7-90E3-4345-9EC9-86113E5CF074}
 		{A6925994-CD80-49DA-9C3D-35E6D40BBFEF} = {C4107CE7-90E3-4345-9EC9-86113E5CF074}
+		{E1974F47-3C2A-4AAB-8BFC-499509C04311} = {C4107CE7-90E3-4345-9EC9-86113E5CF074}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {50BF321A-F848-426E-9788-F3E3A390843A}

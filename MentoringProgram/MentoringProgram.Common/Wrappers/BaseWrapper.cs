@@ -3,6 +3,7 @@ using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using System;
+using System.Threading.Tasks;
 
 namespace MentoringProgram.Common.Wrappers
 {
@@ -27,9 +28,9 @@ namespace MentoringProgram.Common.Wrappers
 
         public virtual Candle GetCurrentCandlePrice(TradingPair pair) => exchangeProvider.GetCurrentCandlePrice(pair);
 
-        public virtual ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback) => exchangeProvider.Subscribe(pair, callback);
+        public virtual  Task<ResponseResult<Subscription>> SubscribeAsync(TradingPair pair, Action<TradeUpdate> callback) => exchangeProvider.SubscribeAsync(pair, callback);
 
-        public virtual void Unsubscribe(PairSubscriptionGuid pairSubscriptionId) => exchangeProvider.Unsubscribe(pairSubscriptionId);
+        public virtual Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId) => exchangeProvider.UnsubscribeAsync(pairSubscriptionId);
 
         public override string ToString() => exchangeProvider.ToString();        
 

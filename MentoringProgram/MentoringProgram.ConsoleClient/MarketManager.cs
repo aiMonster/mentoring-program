@@ -7,10 +7,11 @@ using MentoringProgram.Common.Rules;
 using MentoringProgram.Common.Wrappers;
 using MentoringProgram.ExchangeProviders.Bitfinex;
 using MentoringProgram.ExchangeProviders.Bittrex;
-using MentoringProgram.Tests.ExchangeProviders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MentoringProgram.ConsoleClient
 {
@@ -21,6 +22,7 @@ namespace MentoringProgram.ConsoleClient
 
         IExchangeProvider _testProvider { get; set; }
 
+        private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         private Dictionary<BaseRule, ClientMarketSubscriptions> Subscriptions = new Dictionary<BaseRule, ClientMarketSubscriptions>();
 
         public MarketManager()
@@ -63,7 +65,7 @@ namespace MentoringProgram.ConsoleClient
             }            
         }
 
-        public Subscription SubscribeRule(BaseRule rule, Action callback)
+        public async Task<Subscription> SubscribeRuleAsync(BaseRule rule, Action callback)
         {
             if (!Subscriptions.ContainsKey(rule))
             {
@@ -72,14 +74,14 @@ namespace MentoringProgram.ConsoleClient
                 foreach(var market in rule.TradingMarkets)
                 {
                     var provider = GetExchangeProvider(market);
-                    var response = provider.Subscribe(rule.Pair, (update) => Notify(rule, update));
+                    var response = await provider.SubscribeAsync(rule.Pair, (update) => Notify(rule, update));
                     var marketSubscription = new MarketSubscription(response.Data, market);
                     Subscriptions[rule].MarketSubscriptions.Add(marketSubscription);
                 }
             }
 
             var subscriptionId = Guid.NewGuid();
-            var subscription = new Subscription(subscriptionId, () => Unsubscribe(subscriptionId));
+            var subscription = new Subscription(subscriptionId, () => UnsubscribeAsync(subscriptionId));
 
             var clientSubscription = new ClientSubscription(subscription, callback);
             Subscriptions[rule].ClientSubscriptions.Add(clientSubscription);
@@ -87,27 +89,35 @@ namespace MentoringProgram.ConsoleClient
             return subscription;
         }
 
-        public void Unsubscribe(RuleSubscriptionGuid ruleSubscriptionId)
+        public async Task UnsubscribeAsync(RuleSubscriptionGuid ruleSubscriptionId)
         {
-            var subscription = Subscriptions.FirstOrDefault(v => v.Value.ContainsRuleSubscription(ruleSubscriptionId));
-            if (subscription.Value == null)
+            await Semaphore.WaitAsync();
+            try
             {
-                return;
-            }
-
-            var subscriber = subscription.Value.GetClientSubscription(ruleSubscriptionId);
-            subscription.Value.ClientSubscriptions.Remove(subscriber);
-
-            if (!subscription.Value.ClientSubscriptions.Any())
-            {
-                foreach(var marketSubscription in subscription.Value.MarketSubscriptions)
+                var subscription = Subscriptions.FirstOrDefault(v => v.Value.ContainsRuleSubscription(ruleSubscriptionId));
+                if (subscription.Value == null)
                 {
-                    var provider = GetExchangeProvider(marketSubscription.Market);
-                    provider.Unsubscribe(marketSubscription.Id);
+                    return;
                 }
-            }
 
-            Subscriptions.Remove(subscription.Key);
+                var subscriber = subscription.Value.GetClientSubscription(ruleSubscriptionId);
+                subscription.Value.ClientSubscriptions.Remove(subscriber);
+
+                if (!subscription.Value.ClientSubscriptions.Any())
+                {
+                    foreach (var marketSubscription in subscription.Value.MarketSubscriptions)
+                    {
+                        var provider = GetExchangeProvider(marketSubscription.Market);
+                        await provider.UnsubscribeAsync(marketSubscription.Id);
+                    }
+                }
+
+                Subscriptions.Remove(subscription.Key);
+            }
+            finally
+            {
+                Semaphore.Release();
+            }            
         }
 
         private IExchangeProvider GetExchangeProvider(TradingMarket marketType)

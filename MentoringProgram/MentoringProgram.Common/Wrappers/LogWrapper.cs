@@ -3,6 +3,7 @@ using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using System;
+using System.Threading.Tasks;
 
 namespace MentoringProgram.Common.Wrappers
 {
@@ -26,16 +27,16 @@ namespace MentoringProgram.Common.Wrappers
             base.Dispose();
         }
 
-        public override ResponseResult<Subscription> Subscribe(TradingPair pair, Action<TradeUpdate> callback)
+        public override Task<ResponseResult<Subscription>> SubscribeAsync(TradingPair pair, Action<TradeUpdate> callback)
         {
             Console.WriteLine($"{Name}: Somebody has subscribed to pair - {pair.ToString()} ({base.ToString()})");
-            return base.Subscribe(pair, callback);
+            return base.SubscribeAsync(pair, callback);
         }
 
-        public override void Unsubscribe(PairSubscriptionGuid pairSubscriptionId)
+        public override Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId)
         {
             Console.WriteLine($"{Name}: Somebody has unsubscribed ({base.ToString()})");            
-            base.Unsubscribe(pairSubscriptionId);
+            return base.UnsubscribeAsync(pairSubscriptionId);
         }
     }
 

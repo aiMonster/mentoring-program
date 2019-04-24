@@ -1,11 +1,8 @@
 ﻿using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Wrappers;
-using MentoringProgram.Tests.ExchangeProviders;
+using MentoringProgram.ExchangeProviders.Fake;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace MentoringProgram.Tests
@@ -14,12 +11,12 @@ namespace MentoringProgram.Tests
     public class AutoResubscribeAndAlwaysOnWrappersTest
     {
         [TestMethod]
-        public void ShouldHaveOneSubscription()
+        public async Task AutoResubscribeShouldResubscribeAfterDisconnection()
         {
-            var testProvider = new TestExchangeProvider();
+            var testProvider = new FakeProvider();
             var wrappedProvider = testProvider.AttachAutoResubscribeWrapper().AttachAlwaysOn();
 
-            wrappedProvider.Subscribe(TradingPair.BTCUSD, null);
+            await wrappedProvider.SubscribeAsync(TradingPair.BTCUSD, null);
             testProvider.Disconnect();
 
             var expected = 1;
