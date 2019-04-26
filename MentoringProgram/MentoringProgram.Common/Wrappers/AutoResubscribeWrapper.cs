@@ -18,9 +18,9 @@ namespace MentoringProgram.Common.Wrappers
 
         public AutoResubscribeWrapper(IExchangeProvider provider) : base(provider) { }
 
-        public override async void Connect()
+        public override async Task ConnectAsync()
         { 
-            base.Connect();
+            await base.ConnectAsync();
             foreach (var subscription in PairSubscriptions)
             {
                 var response = await base.SubscribeAsync(subscription.Key, subscription.Value.Callback);

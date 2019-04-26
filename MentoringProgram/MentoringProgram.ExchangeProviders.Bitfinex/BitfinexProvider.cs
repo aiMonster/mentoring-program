@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace MentoringProgram.ExchangeProviders.Bitfinex
 {
-    public class BitfinexProvider : IExchangeProvider
+    public class BitfinexProvider : IBitfinexProvider
     {
         private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         private readonly BitfinexSocketClient _bitfinexSocketClient;
@@ -29,9 +29,10 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
             _bitfinexClient = new BitfinexClient();
         }
 
-        public void Connect()
+        public Task ConnectAsync()
         {
             _bitfinexSocketClient.OnDisconnected += OnDisconnected;
+            return Task.CompletedTask;
         }
 
         public Candle GetCurrentCandlePrice(TradingPair pair)

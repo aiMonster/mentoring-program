@@ -15,10 +15,10 @@ namespace MentoringProgram.Common.Wrappers
             Name = name;
         }
   
-        public override void Connect()
+        public override Task ConnectAsync()
         {
             Console.WriteLine($"{Name}: Connecting to exchange provider - {base.ToString()}");
-            base.Connect();
+            return base.ConnectAsync();
         }
 
         public override void Dispose()

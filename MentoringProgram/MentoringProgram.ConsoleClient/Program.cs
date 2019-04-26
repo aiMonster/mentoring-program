@@ -1,9 +1,11 @@
-﻿using MentoringProgram.Common.Enums;
+﻿using Autofac;
+using MentoringProgram.Common.Enums;
 using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.Subscriptions;
 using MentoringProgram.Common.Rules;
 using MentoringProgram.Common.Rules.PriceReachedRule;
 using MentoringProgram.Common.Rules.PriceReachedRule.Enums;
+using MentoringProgram.ConsoleClient.Util;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,7 +24,8 @@ namespace MentoringProgram.ConsoleClient
             Console.WriteLine("Started ... we will subscribe for two rules");
             Console.WriteLine("Press enter to unsubscribe for one of them and see results ...\n");
 
-            var manager = new MarketManager();           
+            var manager = AutofacConfig.Container.Resolve<MarketManager>();            
+
             manager.ConnectToExchangeProviders(); 
             var s2 = SubscribeAndSetUpDefaultAlertAsync(manager).Result;
             //var s3 = SubscribeAndSetUpDefaultAlert(manager);

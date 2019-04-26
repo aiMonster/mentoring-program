@@ -9,7 +9,7 @@ namespace MentoringProgram.Common.Interfaces
     public interface IExchangeProvider : IDisposable
     {
         event Action OnDisconnected;
-        void Connect();
+        Task ConnectAsync();
         Task<ResponseResult<Subscription>> SubscribeAsync(TradingPair pair, Action<TradeUpdate> callback);
         Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId);
         Candle GetCurrentCandlePrice(TradingPair pair);

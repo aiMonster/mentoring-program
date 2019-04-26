@@ -46,9 +46,9 @@ namespace MentoringProgram.ExchangeProviders.Fake
 
         #region IExchangeProvider Members
 
-        public event Action OnDisconnected;        
+        public event Action OnDisconnected;
 
-        public void Connect() { }        
+        public Task ConnectAsync() => Task.CompletedTask;        
 
         public Candle GetCurrentCandlePrice(TradingPair pair) => GetRandomCandle();    
         
@@ -57,7 +57,8 @@ namespace MentoringProgram.ExchangeProviders.Fake
             var cancellationTokenSource = new CancellationTokenSource();
             var token = cancellationTokenSource.Token;
 
-            var task = new Task(async () =>
+
+            var task = Task.Run(async () =>
             {
                 while (true)
                 {
@@ -65,8 +66,7 @@ namespace MentoringProgram.ExchangeProviders.Fake
                     await Task.Delay(2000);
                 }
             }, token);
-
-            task.Start();
+           
 
 
             var id = Guid.NewGuid();

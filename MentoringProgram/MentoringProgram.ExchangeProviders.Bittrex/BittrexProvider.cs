@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace MentoringProgram.ExchangeProviders.Bittrex
 {
-    public class BittrexProvider : IExchangeProvider
+    public class BittrexProvider : IBittrexProvider
     {
         private object Locker { get; set; } = new object();
         private readonly BittrexSocketClient _bittrexSocketClient;
@@ -29,10 +29,10 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
             _bittrexClient = new BittrexClient();
         }
 
-        public void Connect()
+        public async Task ConnectAsync()
         {
             _bittrexSocketClient.OnDisconnected += OnDisconnected;
-            StartReceiveUpdates();
+            await StartReceiveUpdatesAsync();
         }
 
         public Candle GetCurrentCandlePrice(TradingPair pair)
@@ -95,9 +95,9 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
             }
         }
 
-        private void StartReceiveUpdates()
+        private async Task StartReceiveUpdatesAsync()
         {
-            _bittrexSocketClient.SubscribeToMarketSummariesUpdate(data =>
+            await _bittrexSocketClient.SubscribeToMarketSummariesUpdateAsync(data =>
             {
                 var subscribedPairs = data.Where(d => Subscriptions.Values.Contains(d.MarketName.ToTradingPair())).ToList();
                 

@@ -11,7 +11,7 @@ namespace MentoringProgram.Common.Wrappers
 
         private void HandleDisconnecting()
         {            
-            base.Connect();
+            base.ConnectAsync();
         }
 
         public override void Dispose()

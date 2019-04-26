@@ -5,6 +5,7 @@ using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
 using MentoringProgram.Common.Rules;
 using MentoringProgram.Common.Wrappers;
+using MentoringProgram.ConsoleClient.Util;
 using MentoringProgram.ExchangeProviders.Bitfinex;
 using MentoringProgram.ExchangeProviders.Bittrex;
 using System;
@@ -23,17 +24,17 @@ namespace MentoringProgram.ConsoleClient
         IExchangeProvider _testProvider { get; set; }
 
         private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
-        private Dictionary<BaseRule, ClientMarketSubscriptions> Subscriptions = new Dictionary<BaseRule, ClientMarketSubscriptions>();
+        private Dictionary<BaseRule, ClientMarketSubscriptions> Subscriptions = new Dictionary<BaseRule, ClientMarketSubscriptions>();              
 
-        public MarketManager()
+        public MarketManager(IBitfinexProvider bitfinexProvider, IBittrexProvider bittrexProvider)
         {
-            _bitfinexProvider = new BitfinexProvider().AttachLoger("Logger1")
+            _bitfinexProvider = bitfinexProvider.AttachLoger("Logger1")
                                                       .AttachAutoResubscribeWrapper()
                                                       .AttachSubscriptionDublicatesWrapper()
                                                       .AttachLoger("Logger2")
                                                       .AttachAlwaysOn();
 
-            _bittrexProvider = new BittrexProvider().AttachLoger("Log1")
+            _bittrexProvider = bittrexProvider.AttachLoger("Log1")
                                                     .AttachAutoResubscribeWrapper()
                                                     .AttachSubscriptionDublicatesWrapper()
                                                     .AttachLoger("Log2")
@@ -43,8 +44,8 @@ namespace MentoringProgram.ConsoleClient
 
         public void ConnectToExchangeProviders()
         {
-            _bitfinexProvider.Connect();
-            _bittrexProvider.Connect();
+            _bitfinexProvider.ConnectAsync();
+            _bittrexProvider.ConnectAsync();
         }
         public void Notify(BaseRule rule, TradeUpdate update)
         {

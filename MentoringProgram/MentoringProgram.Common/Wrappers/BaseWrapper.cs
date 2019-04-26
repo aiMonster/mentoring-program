@@ -22,7 +22,7 @@ namespace MentoringProgram.Common.Wrappers
             remove { exchangeProvider.OnDisconnected -= value; }
         }
 
-        public virtual void Connect() => exchangeProvider.Connect();
+        public virtual Task ConnectAsync() => exchangeProvider.ConnectAsync();
       
         public virtual void Dispose() => exchangeProvider.Dispose();
 
