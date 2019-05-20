@@ -1,4 +1,5 @@
 ﻿using MentoringProgram.Common.Enums;
+using MentoringProgram.Common.Helpers;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.SubscriptionIds;
@@ -8,6 +9,7 @@ using MentoringProgram.Common.Wrappers;
 using MentoringProgram.ConsoleClient.Util;
 using MentoringProgram.ExchangeProviders.Bitfinex;
 using MentoringProgram.ExchangeProviders.Bittrex;
+using MentoringProgram.ExchangeProviders.Fake;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,34 +20,22 @@ namespace MentoringProgram.ConsoleClient
 {
     public class MarketManager
     {
-        IExchangeProvider _bitfinexProvider { get; }
-        IExchangeProvider _bittrexProvider { get; }
-
-        IExchangeProvider _testProvider { get; set; }
+        private IEnumerable<IExchangeProvider> _exchangeProviders;      
 
         private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         private Dictionary<BaseRule, ClientMarketSubscriptions> Subscriptions = new Dictionary<BaseRule, ClientMarketSubscriptions>();              
 
-        public MarketManager(IBitfinexProvider bitfinexProvider, IBittrexProvider bittrexProvider)
+        public MarketManager(IEnumerable<IExchangeProvider> exhangeProviders)
         {
-            _bitfinexProvider = bitfinexProvider.AttachLoger("Logger1")
-                                                      .AttachAutoResubscribeWrapper()
-                                                      .AttachSubscriptionDublicatesWrapper()
-                                                      .AttachLoger("Logger2")
-                                                      .AttachAlwaysOn();
-
-            _bittrexProvider = bittrexProvider.AttachLoger("Log1")
-                                                    .AttachAutoResubscribeWrapper()
-                                                    .AttachSubscriptionDublicatesWrapper()
-                                                    .AttachLoger("Log2")
-                                                    .AttachAlwaysOn();
-         
+            _exchangeProviders = exhangeProviders.Select(provider => provider.AttachLoger($"Logger1 ({ provider.ToString() })")
+                                                                             .AttachAutoResubscribeWrapper()
+                                                                             .AttachLoger($"Logger2 ({ provider.ToString() })")
+                                                                             .AttachAlwaysOn());
         }
 
         public void ConnectToExchangeProviders()
         {
-            _bitfinexProvider.ConnectAsync();
-            _bittrexProvider.ConnectAsync();
+            Parallel.ForEach(_exchangeProviders, async (provider) => await provider.ConnectAsync());               
         }
         public void Notify(BaseRule rule, TradeUpdate update)
         {
@@ -82,7 +72,7 @@ namespace MentoringProgram.ConsoleClient
             }
 
             var subscriptionId = Guid.NewGuid();
-            var subscription = new Subscription(subscriptionId, () => UnsubscribeAsync(subscriptionId));
+            var subscription = new Subscription(subscriptionId, async () => await UnsubscribeAsync(subscriptionId));
 
             var clientSubscription = new ClientSubscription(subscription, callback);
             Subscriptions[rule].ClientSubscriptions.Add(clientSubscription);
@@ -90,10 +80,9 @@ namespace MentoringProgram.ConsoleClient
             return subscription;
         }
 
-        public async Task UnsubscribeAsync(RuleSubscriptionGuid ruleSubscriptionId)
+        public Task UnsubscribeAsync(RuleSubscriptionGuid ruleSubscriptionId)
         {
-            await Semaphore.WaitAsync();
-            try
+            return ThreadSafeRunner.Run( async () => 
             {
                 var subscription = Subscriptions.FirstOrDefault(v => v.Value.ContainsRuleSubscription(ruleSubscriptionId));
                 if (subscription.Value == null)
@@ -114,24 +103,13 @@ namespace MentoringProgram.ConsoleClient
                 }
 
                 Subscriptions.Remove(subscription.Key);
-            }
-            finally
-            {
-                Semaphore.Release();
-            }            
+
+            }, Semaphore);
         }
 
-        private IExchangeProvider GetExchangeProvider(TradingMarket marketType)
-        {
-            switch (marketType)
-            {
-                case TradingMarket.Bitfinex:
-                    return _bitfinexProvider;
-                case TradingMarket.Bittrex:
-                    return _bittrexProvider;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(marketType));
-            }
-        }
+        
+
+        private IExchangeProvider GetExchangeProvider(TradingMarket marketType) => 
+            _exchangeProviders.Single(p => p.Type == marketType);      
     }  
 }

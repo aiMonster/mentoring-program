@@ -27,7 +27,7 @@ namespace MentoringProgram.ConsoleClient
             var manager = AutofacConfig.Container.Resolve<MarketManager>();            
 
             manager.ConnectToExchangeProviders(); 
-            var s2 = SubscribeAndSetUpDefaultAlertAsync(manager).Result;
+            var s2 = SubscribeAndSetUpAlertAsync(manager).Result;
             //var s3 = SubscribeAndSetUpDefaultAlert(manager);
             
             Console.ReadLine();

@@ -1,5 +1,6 @@
 ﻿using Bittrex.Net;
 using Bittrex.Net.Objects;
+using MentoringProgram.Common.Enums;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.SubscriptionIds;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace MentoringProgram.ExchangeProviders.Bittrex
 {
-    public class BittrexProvider : IBittrexProvider
+    public class BittrexProvider : IExchangeProvider
     {
         private object Locker { get; set; } = new object();
         private readonly BittrexSocketClient _bittrexSocketClient;
@@ -21,7 +22,9 @@ namespace MentoringProgram.ExchangeProviders.Bittrex
 
         private Dictionary<Subscriber, TradingPair> Subscriptions = new Dictionary<Subscriber, TradingPair>();        
         
-        public event Action OnDisconnected; 
+        public event Action OnDisconnected;
+
+        public TradingMarket Type { get => TradingMarket.Bittrex; }
 
         public BittrexProvider()
         {

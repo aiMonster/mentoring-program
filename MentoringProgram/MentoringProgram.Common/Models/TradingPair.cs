@@ -20,8 +20,8 @@ namespace MentoringProgram.Common.Models
                 throw new ArgumentOutOfRangeException(nameof(quote));
             }
            
-            Base = @base;
-            Quote = quote;
+            Base = string.Intern(@base);
+            Quote = string.Intern(quote);
         }
 
         public TradingPair UseBase(string @base) =>        
@@ -50,12 +50,12 @@ namespace MentoringProgram.Common.Models
 
         public override string ToString()
         {
-            return $"{Base.ToUpper()}/{Quote.ToUpper()}";
+            return $"{string.Intern(Base.ToUpper())}/{string.Intern(Quote.ToUpper())}";
         }
 
         public static TradingPair BTCUSD
         {
-            get {  return new TradingPair("btc", "usd"); }
+            get {  return new TradingPair(string.Intern("btc"), string.Intern("usd")); }
         }
     }
 }

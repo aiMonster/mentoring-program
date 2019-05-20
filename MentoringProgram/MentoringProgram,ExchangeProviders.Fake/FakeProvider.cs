@@ -1,4 +1,5 @@
-﻿using MentoringProgram.Common.Interfaces;
+﻿using MentoringProgram.Common.Enums;
+using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
@@ -42,11 +43,14 @@ namespace MentoringProgram.ExchangeProviders.Fake
 
         public void Disconnect() => Dispose();
 
+
         #endregion
 
         #region IExchangeProvider Members
 
         public event Action OnDisconnected;
+
+        public TradingMarket Type { get => TradingMarket.Fake; }
 
         public Task ConnectAsync() => Task.CompletedTask;        
 

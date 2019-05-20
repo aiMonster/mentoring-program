@@ -1,5 +1,6 @@
 ﻿using Bitfinex.Net;
 using CryptoExchange.Net.Sockets;
+using MentoringProgram.Common.Enums;
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.SubscriptionIds;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace MentoringProgram.ExchangeProviders.Bitfinex
 {
-    public class BitfinexProvider : IBitfinexProvider
+    public class BitfinexProvider : IExchangeProvider
     {
         private SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         private readonly BitfinexSocketClient _bitfinexSocketClient;
@@ -22,6 +23,8 @@ namespace MentoringProgram.ExchangeProviders.Bitfinex
         private Dictionary<Subscription, UpdateSubscription> Subscriptions = new Dictionary<Subscription, UpdateSubscription>();        
 
         public event Action OnDisconnected;
+
+        public TradingMarket Type { get => TradingMarket.Bitfinex; }
 
         public BitfinexProvider()
         {

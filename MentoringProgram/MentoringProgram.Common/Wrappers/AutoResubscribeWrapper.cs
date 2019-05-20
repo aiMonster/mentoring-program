@@ -1,4 +1,5 @@
-﻿using MentoringProgram.Common.Interfaces;
+﻿using MentoringProgram.Common.Helpers;
+using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
@@ -41,10 +42,9 @@ namespace MentoringProgram.Common.Wrappers
             return response;
         }
 
-        public override async Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId)
+        public override Task UnsubscribeAsync(PairSubscriptionGuid pairSubscriptionId)
         {
-            await Semaphore.WaitAsync();
-            try
+            return ThreadSafeRunner.Run(async () => 
             {
                 var pairSubscription = PairSubscriptions.FirstOrDefault(s => s.Value.ClientSubscription.Id == pairSubscriptionId);
                 if (pairSubscription.Value != null)
@@ -52,11 +52,7 @@ namespace MentoringProgram.Common.Wrappers
                     await base.UnsubscribeAsync(pairSubscription.Value.ProviderSubscription.Id);
                     PairSubscriptions.Remove(pairSubscription.Key);
                 }
-            }
-            finally
-            {
-                Semaphore.Release();
-            }               
+            }, Semaphore);
         }
 
         public override void Dispose()

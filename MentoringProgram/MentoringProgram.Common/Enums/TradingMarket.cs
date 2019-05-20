@@ -3,6 +3,7 @@
     public enum TradingMarket
     {
         Bitfinex = 0,
-        Bittrex = 1       
+        Bittrex = 1,
+        Fake = 2
     }
 }

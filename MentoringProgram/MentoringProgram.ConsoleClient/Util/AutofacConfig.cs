@@ -2,6 +2,8 @@
 using MentoringProgram.Common.Interfaces;
 using MentoringProgram.ExchangeProviders.Bitfinex;
 using MentoringProgram.ExchangeProviders.Bittrex;
+using MentoringProgram.ExchangeProviders.Fake;
+using System.Reflection;
 
 namespace MentoringProgram.ConsoleClient.Util
 {
@@ -13,8 +15,9 @@ namespace MentoringProgram.ConsoleClient.Util
         {
             var builder = new ContainerBuilder();
 
-            builder.RegisterType<BitfinexProvider>().As<IBitfinexProvider>();
-            builder.RegisterType<BittrexProvider>().As<IBittrexProvider>();
+            builder.RegisterType<BitfinexProvider>().AsImplementedInterfaces();
+            builder.RegisterType<BittrexProvider>().AsImplementedInterfaces();
+            builder.RegisterType<FakeProvider>().AsImplementedInterfaces();
 
             builder.RegisterType<MarketManager>();
 

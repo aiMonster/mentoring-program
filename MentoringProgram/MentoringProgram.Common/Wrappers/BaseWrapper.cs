@@ -1,4 +1,5 @@
-﻿using MentoringProgram.Common.Interfaces;
+﻿using MentoringProgram.Common.Enums;
+using MentoringProgram.Common.Interfaces;
 using MentoringProgram.Common.Models;
 using MentoringProgram.Common.Models.SubscriptionIds;
 using MentoringProgram.Common.Models.Subscriptions;
@@ -21,6 +22,8 @@ namespace MentoringProgram.Common.Wrappers
             add { exchangeProvider.OnDisconnected += value; }            
             remove { exchangeProvider.OnDisconnected -= value; }
         }
+
+        public TradingMarket Type { get => exchangeProvider.Type; }
 
         public virtual Task ConnectAsync() => exchangeProvider.ConnectAsync();
       
